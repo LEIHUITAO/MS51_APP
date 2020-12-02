@@ -1,0 +1,183 @@
+C51 COMPILER V9.00   SYS_INIT                                                              11/04/2020 15:29:22 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SYS_INIT
+OBJECT MODULE PLACED IN .\Output\Sys_Init.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Sys_Init.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;.
+                    -.\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Init.lst) TABS(2) OBJECT(.\
+                    -Output\Sys_Init.obj)
+
+line level    source
+
+   1          //*****************文*件*信*息********************************************
+   2          // *文 件 名：Init.c
+   3          // *版　  本：V1.0
+   4          // *创 建 人：
+   5          // *日　  期：
+   6          // *描　  述：
+   7          // *
+   8          // *当前版本：V1.0
+   9          // *修 改 人：
+  10          // *日　  期：
+  11          // *描　  述：
+  12          //************************************************************************
+  13          #include "Includes.h"
+  14          
+  15          #include "Sys_Init.h"
+  16          #include "Sys_Time0_IRQ.h"
+  17          #include "Sys_Uart0_IRQ.h"
+  18          #include "Sys_Adc.h"
+  19          #include "App_Flash.h"
+  20          #include "App_BT_Uart0.h"
+  21          #include "App_Key.h"
+  22          #include "App_Charge_bat.h"
+  23          
+  24          static void MODIFY_HIRC_VLAUE(void);
+  25          static void RCC_Init( void );
+  26          static void Port_init(void);
+  27          
+  28          
+  29          //************************************************************************
+  30          // *功    能：修改HIRC 为16.6MHZ   
+  31          // *入    口：
+  32          // *出    口：
+  33          // *备    注：
+  34          // *函数性质：
+  35          //************************************************************************
+  36          static void MODIFY_HIRC_VLAUE(void)
+  37          {
+  38   1          u8 hircmap0,hircmap1;
+  39   1          u16 trimvalue16bit;
+  40   1          
+  41   1        set_IAPEN;
+  42   1        IAPAL = 0x30;
+  43   1          IAPAH = 0x00;
+  44   1          IAPCN = READ_UID;
+  45   1          set_IAPGO;
+  46   1        hircmap0 = IAPFD;
+  47   1        IAPAL = 0x31;
+  48   1          IAPAH = 0x00;
+  49   1          set_IAPGO;
+  50   1        hircmap1 = IAPFD;
+  51   1        clr_IAPEN;
+  52   1        trimvalue16bit = ((hircmap0<<1)+(hircmap1&0x01));
+  53   1        trimvalue16bit = trimvalue16bit - 15;
+C51 COMPILER V9.00   SYS_INIT                                                              11/04/2020 15:29:22 PAGE 2   
+
+  54   1        hircmap1 = trimvalue16bit&0x01;
+  55   1        hircmap0 = trimvalue16bit>>1;
+  56   1        TA=0XAA;
+  57   1        TA=0X55;
+  58   1        RCTRIM0 = hircmap0;
+  59   1        TA=0XAA;
+  60   1        TA=0X55;
+  61   1        RCTRIM1 = hircmap1;
+  62   1      }
+  63          
+  64          //************************************************************************
+  65          // *功    能：时钟初始化
+  66          // *入    口：
+  67          // *出    口：
+  68          // *备    注：
+  69          // *函数性质：
+  70          //************************************************************************
+  71          static void RCC_Init( void )
+  72          {
+  73   1          
+  74   1      #if 1
+  75   1          
+  76   1          set_HIRCEN;     //使能内部时钟
+  77   1          clr_EXTEN1;     //禁止外部时间,P30为普通IO
+  78   1          clr_EXTEN0;     //禁止外部时间,P30为普通IO
+  79   1          
+  80   1          while((CKSWT & SET_BIT5) == 0);     //等待内部时钟稳定
+  81   1          
+  82   1          MODIFY_HIRC_VLAUE();                //修改HIRC 为16.6MHZ   
+  83   1          
+  84   1      #else
+                  set_EXTEN1;     //使能外部时钟
+                  set_EXTEN0;
+                  clr_HIRCEN;     //禁止内部时钟
+                  while((CKSWT & SET_BIT3) == 0);     //等待外部时钟稳定
+                  
+                  clr_OSC1;
+                  set_OSC0;       //选在外部时钟
+                  
+                  while(CKEN & SET_BIT0);             //等待切换完成
+                  
+              #endif
+  96   1          
+  97   1      #if 0
+                  P11_Quasi_Mode;
+                  set_CLOEN;      //P1.1 输出时针
+              #endif
+ 101   1      
+ 102   1      }
+ 103          
+ 104          //************************************************************************
+ 105          // *功    能：系统初始化
+ 106          // *入    口：
+ 107          // *出    口：
+ 108          // *备    注：
+ 109          // *函数性质：
+ 110          //************************************************************************
+ 111          void SYS_Init( void )
+ 112          {
+ 113   1          RCC_Init();  
+ 114   1          Time0_Init();
+ 115   1          Adc_Init();
+C51 COMPILER V9.00   SYS_INIT                                                              11/04/2020 15:29:22 PAGE 3   
+
+ 116   1          Port_init();
+ 117   1          Uart0_Init();
+ 118   1      }
+ 119          
+ 120          //************************************************************************
+ 121          // *功    能：外部模块初始化
+ 122          // *入    口：
+ 123          // *出    口：
+ 124          // *备    注：
+ 125          // *函数性质：
+ 126          //************************************************************************
+ 127          void Module_Init(void)
+ 128          {
+ 129   1        
+ 130   1      }
+ 131          
+ 132          static void Port_init(void)
+ 133          {
+ 134   1          ALL_GPIO_QUASI_MODE;
+ 135   1      
+ 136   1          P05_PUSHPULL_MODE;
+ 137   1        P15_INPUT_MODE;
+ 138   1      
+ 139   1          //
+ 140   1          P00_PUSHPULL_MODE;
+ 141   1          P10_PUSHPULL_MODE;
+ 142   1          P11_PUSHPULL_MODE;
+ 143   1      
+ 144   1          //
+ 145   1          P03_INPUT_MODE;
+ 146   1          P17_INPUT_MODE;
+ 147   1      
+ 148   1          //
+ 149   1          P30_INPUT_MODE;
+ 150   1          
+ 151   1          //
+ 152   1          P14_PUSHPULL_MODE;
+ 153   1      }
+ 154          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    294    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

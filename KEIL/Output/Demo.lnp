@@ -1,0 +1,18 @@
+".\Output\Main.obj",
+".\Output\Sys_Init.obj",
+".\Output\Sys_Time0_IRQ.obj",
+".\Output\Sys_Adc.obj",
+".\Output\Sys_Uart0_IRQ.obj",
+".\Output\App_BT_Uart0.obj",
+".\Output\App_Key.obj",
+".\Output\App_Charge_bat.obj",
+".\Output\App_pwr_off.obj",
+".\Output\App_iap_info.obj",
+".\Output\App_blue_led.obj",
+".\Output\App_Reset_BT.obj",
+".\Output\APP_Adc.obj",
+".\Output\Delay.obj",
+".\Output\STARTUP.obj" 
+TO ".\Output\Demo" 
+PRINT(".\LST\Demo.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 

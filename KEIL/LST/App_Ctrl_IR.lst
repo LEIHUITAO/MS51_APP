@@ -1,0 +1,14 @@
+C51 COMPILER V9.00   APP_CTRL_IR                                                           03/02/2020 14:37:12 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE APP_CTRL_IR
+OBJECT MODULE PLACED IN .\Output\App_Ctrl_IR.obj
+COMPILER INVOKED BY: C:\Keil_C51\C51\BIN\C51.EXE ..\Main\App_Ctrl_IR.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Mai
+                    -n;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Ctrl_IR.lst) TABS(2) OBJ
+                    -ECT(.\Output\App_Ctrl_IR.obj)
+
+line level    source
+
+*** ERROR C318 OF ..\Main\App_Ctrl_IR.c: can't open file '..\Main\App_Ctrl_IR.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

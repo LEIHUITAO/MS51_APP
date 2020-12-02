@@ -1,0 +1,187 @@
+C51 COMPILER V9.00   UART                                                                  03/03/2020 11:46:28 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\Output\uart.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Library\uart.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
+                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\uart.lst) OBJECT(.\Output\uart.o
+                    -bj)
+
+line level    source
+
+   1          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   2          /*                                                                                                        
+             - */
+   3          /* Copyright(c) 2019 Nuvoton Technology Corp. All rights reserved.                                        
+             - */
+   4          /*                                                                                                        
+             - */
+   5          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   6          
+   7          /*********************************************************************************************************
+             -**/
+   8          /*  Website: http://www.nuvoton.com                                                                       
+             - */
+   9          /*  E-Mail : MicroC-8bit@nuvoton.com                                                                      
+             - */
+  10          /*  Date   : Jan/21/2019                                                                                  
+             - */
+  11          /*********************************************************************************************************
+             -**/
+  12          #include "includes.h"
+  13          #include "uart.h"
+  14          
+  15          bit PRINTFG = 0, uart0_receive_flag = 0, uart1_receive_flag;
+  16          unsigned char uart0_receive_data, uart1_receive_data;
+  17          
+  18          
+  19          void Serial_ISR(void) interrupt 4
+  20          {
+  21   1          _push_(SFRS);
+  22   1        
+  23   1          if (RI)
+  24   1          {
+  25   2              uart0_receive_flag = 1;
+  26   2              uart0_receive_data = SBUF;
+  27   2              clr_SCON_RI;                                         // Clear RI (Receive Interrupt).
+  28   2          }
+  29   1      
+  30   1          if (TI)
+  31   1          {
+  32   2              if (!PRINTFG)
+  33   2              {
+  34   3                  TI = 0;
+  35   3              }
+  36   2          }
+  37   1      
+  38   1          _pop_(SFRS);
+  39   1      }       
+  40          
+  41          
+  42          
+  43          void SerialPort1_ISR(void) interrupt 15
+C51 COMPILER V9.00   UART                                                                  03/03/2020 11:46:28 PAGE 2   
+
+  44          {
+  45   1          _push_(SFRS);
+  46   1        
+  47   1          if (RI_1)
+  48   1          {
+  49   2              uart1_receive_data = SBUF_1;
+  50   2              uart1_receive_flag = 1;
+  51   2              clr_SCON_1_RI_1;                             /* clear reception flag for next reception */
+  52   2          }
+  53   1      
+  54   1          if (TI_1 == 1)
+  55   1          {
+  56   2              if (!PRINTFG)
+  57   2              {
+  58   3                  clr_SCON_1_TI_1;                             /* if emission occur */
+  59   3              }
+  60   2          }
+  61   1      
+  62   1          _pop_(SFRS);
+  63   1      }
+  64          
+  65          
+  66          
+  67          /*MS51 new version buadrate */
+  68          void UART_Open(unsigned long u32SysClock, unsigned char u8UARTPort,unsigned long u32Baudrate)
+  69          {
+  70   1        switch(u8UARTPort)
+  71   1        {
+  72   2          case UART0_Timer1:
+  73   2                SCON = 0x50;       //UART0 Mode1,REN=1,TI=1
+  74   2                TMOD |= 0x20;      //Timer1 Mode1
+  75   2                set_PCON_SMOD;          //UART0 Double Rate Enable
+  76   2                set_CKCON_T1M;
+  77   2                clr_T3CON_BRCK;          //Serial port 0 baud rate clock source = Timer1
+  78   2                TH1 = 256 - (u32SysClock/16/u32Baudrate);
+  79   2                set_TCON_TR1;
+  80   2            break;
+  81   2            
+  82   2            case UART0_Timer3:
+  83   2                SCON = 0x50;     //UART0 Mode1,REN=1,TI=1
+  84   2                set_PCON_SMOD;        //UART0 Double Rate Enable
+  85   2                T3CON &= 0xF8;   //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1)
+  86   2                set_T3CON_BRCK;        //UART0 baud rate clock source = Timer3
+  87   2                RH3    = HIBYTE(65536 - (u32SysClock/16/u32Baudrate));  
+  88   2                RL3    = LOBYTE(65536 - (u32SysClock/16/u32Baudrate));  
+  89   2                set_T3CON_TR3;         //Trigger Timer3
+  90   2            break;
+  91   2            
+  92   2            case UART1_Timer3:
+  93   2                SCON_1 = 0x50;     //UART1 Mode1,REN_1=1,TI_1=1
+  94   2                T3CON = 0x80;     //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1), UART1 in MODE 1
+  95   2                RH3    = HIBYTE(65536 - (u32SysClock/16/u32Baudrate));  
+  96   2                RL3    = LOBYTE(65536 - (u32SysClock/16/u32Baudrate));     
+  97   2                set_T3CON_TR3;             //Trigger Timer3                                                     
+             -        
+  98   2            break; 
+  99   2        }
+ 100   1      }
+ 101          
+ 102          #if 0 
+              unsigned char Receive_Data(unsigned char UARTPort)
+              {
+C51 COMPILER V9.00   UART                                                                  03/03/2020 11:46:28 PAGE 3   
+
+                  UINT8 c;
+                  switch (UARTPort)
+                  {
+                    case UART0:
+                      while (!RI);
+                      c = SBUF;
+                      RI = 0;
+                    break;
+                    case UART1:
+                      while (!RI_1);
+                      c = SBUF_1;
+                      RI_1 = 0;
+                    break;
+                  }
+                  return (c);
+              }
+              #endif
+ 122          
+ 123          void UART_Send_Data(UINT8 UARTPort, UINT8 c)
+ 124          {
+ 125   1          switch (UARTPort)
+ 126   1          {
+ 127   2            case UART0:
+ 128   2              SBUF = c;
+ 129   2            break;
+ 130   2            case UART1:
+ 131   2              SBUF_1 = c;
+ 132   2            break;
+ 133   2          }
+ 134   1      }
+ 135          
+ 136          //=============================================================================
+ 137          //printf÷ÿ∂®œÚ
+ 138          //=============================================================================
+ 139          char putchar(char c)
+ 140          {
+ 141   1          #if 1
+ 142   1              UART_Send_Data(UART0,c);
+ 143   1          #endif
+ 144   1          
+ 145   1          return c;
+ 146   1      }
+ 147          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    252    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

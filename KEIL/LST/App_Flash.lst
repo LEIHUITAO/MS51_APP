@@ -1,0 +1,148 @@
+C51 COMPILER V9.52.0.0   APP_FLASH                                                         03/17/2020 16:49:10 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_FLASH
+OBJECT MODULE PLACED IN .\Output\App_Flash.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Flash.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;
+                    -..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Flash.lst) OBJECT(.\Output
+                    -\App_Flash.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "Sys_Flash.h"
+   3          #include "App_Flash.h"
+   4          
+   5          static u16 uwWrite_addr;
+   6          #define DEF_FLASH_START_ADDR    0x3400
+   7          #define DEF_FLASH_END_ADDR      0x3800
+   8          
+   9          char Flash_data_read(u8 *buf,u8 ucSize)
+  10          {
+  11   1          u16 uwRead_addr;
+  12   1          u8 i;
+  13   1          u8 ucCheck;
+  14   1          char ret;
+  15   1      
+  16   1          uwRead_addr = DEF_FLASH_START_ADDR;
+  17   1          do
+  18   1          {
+  19   2              APROM_Read(uwRead_addr,buf,ucSize);
+  20   2      
+  21   2              ucCheck = 0;
+  22   2              for(i=0;i<(ucSize-1);i++)
+  23   2              {
+  24   3                  ucCheck += *(buf+i);
+  25   3              }
+  26   2      
+  27   2              if(ucCheck ==  *(buf+(ucSize-1)))
+  28   2              {
+  29   3                  uwRead_addr += ucSize;
+  30   3                  if(uwRead_addr >= (DEF_FLASH_END_ADDR-ucSize))
+  31   3                  {
+  32   4                      APROM_Erase(DEF_FLASH_START_ADDR,DEF_FLASH_END_ADDR-DEF_FLASH_START_ADDR);
+  33   4                      APROM_Program(DEF_FLASH_START_ADDR,buf,ucSize);
+  34   4                      uwWrite_addr = DEF_FLASH_START_ADDR + ucSize;
+  35   4                      return 0;
+  36   4                  }   
+  37   3              }
+  38   2              else
+  39   2              {
+  40   3                  if(DEF_FLASH_START_ADDR == uwRead_addr)
+  41   3                  {
+  42   4                      uwRead_addr = DEF_FLASH_START_ADDR;
+  43   4                      uwWrite_addr = DEF_FLASH_START_ADDR;
+  44   4                      ret = 1;
+  45   4                  }
+  46   3                  else
+  47   3                  {
+  48   4                      uwWrite_addr = uwRead_addr;
+  49   4                      uwRead_addr -= ucSize;
+  50   4                      ret = 0;
+  51   4                  }
+  52   3      
+  53   3                  APROM_Read(uwRead_addr,buf,ucSize);
+C51 COMPILER V9.52.0.0   APP_FLASH                                                         03/17/2020 16:49:10 PAGE 2   
+
+  54   3                  break;
+  55   3              }
+  56   2          }
+  57   1          while(1);
+  58   1          
+  59   1          return ret;
+  60   1      }
+  61          
+  62          void Flash_data_write(u8 *buf,u8 ucSize)
+  63          {
+  64   1          u8 i;
+  65   1      
+  66   1          *(buf+(ucSize-1)) = 0;
+  67   1          for(i=0;i<(ucSize-1);i++)
+  68   1          {
+  69   2              *(buf+(ucSize-1)) += *(buf+i);
+  70   2          }
+  71   1          APROM_Program(uwWrite_addr,buf,ucSize);
+  72   1          
+  73   1          uwWrite_addr += ucSize;
+  74   1          if(uwWrite_addr >= (DEF_FLASH_END_ADDR-ucSize))
+  75   1          {
+  76   2              uwWrite_addr = DEF_FLASH_START_ADDR;
+  77   2          }
+  78   1      }
+  79          
+  80          void Flash_data_init(void)
+  81          {
+  82   1          u8 TMP[DEF_FLASH_DATA_SIZE];
+  83   1          u8 i;
+  84   1          char ret;
+  85   1          ret = Flash_data_read(TMP,sizeof(TMP));
+  86   1          if(1 == ret)
+  87   1          {
+  88   2              //frist init
+  89   2              for(i=0;i<(sizeof(TMP)-1);i++)
+  90   2              {
+  91   3                  TMP[i] = 0;
+  92   3              }
+  93   2              //ubPwm_Duty_Set = c_ubPwm_Duty_Max;
+  94   2              //TMP[0] = ubPwm_Duty_Set;
+  95   2      
+  96   2              Flash_data_write(TMP,sizeof(TMP));
+  97   2          }
+  98   1          else
+  99   1          {
+ 100   2              //read ok
+ 101   2              //ubPwm_Duty_Set = TMP[0];
+ 102   2          }
+ 103   1      }
+ 104          
+ 105          void Flash_data_save(void)
+ 106          {
+ 107   1          /*
+ 108   1          u8 TMP[DEF_FLASH_DATA_SIZE];
+ 109   1          u8 i;
+ 110   1          for(i=0;i<(sizeof(TMP)-1);i++)
+ 111   1          {
+ 112   1              TMP[i] = 0;
+ 113   1          }
+ 114   1          //TMP[0] = ubPwm_Duty_Set;
+ 115   1      
+C51 COMPILER V9.52.0.0   APP_FLASH                                                         03/17/2020 16:49:10 PAGE 3   
+
+ 116   1          Flash_data_write(TMP,sizeof(TMP));
+ 117   1          */
+ 118   1      }
+ 119          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    402    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2      15
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

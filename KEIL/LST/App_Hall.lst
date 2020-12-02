@@ -1,0 +1,101 @@
+C51 COMPILER V9.52.0.0   APP_HALL                                                          03/27/2020 11:39:35 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_HALL
+OBJECT MODULE PLACED IN .\Output\App_Hall.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Hall.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;.
+                    -.\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Hall.lst) OBJECT(.\Output\A
+                    -pp_Hall.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "App_Hall.h"
+   3          #include "Sys_Init.h"
+   4          #include "App_BT_Uart0.h"
+   5          
+   6          #define c_ucTime_cnt 5
+   7          #define c_ucTime_cnt_1S     200
+   8          #define c_uwAuto_off_time   (15*60) //1S
+   9          
+  10          static u8 ucHall_status;
+  11          static u16 uwAuto_off_time;
+  12          
+  13          void app_hall_init(void)
+  14          {
+  15   1              ucHall_status = 0;
+  16   1      }
+  17          
+  18          u8 app_hall_status(void)
+  19          {
+  20   1          return ucHall_status;
+  21   1      }
+  22          
+  23          void app_hall_server(void)
+  24          {
+  25   1              static xdata u8 ucTime_cnt1 = 0;
+  26   1              static xdata u8 ucTime_cnt2 = 0;
+  27   1          static xdata u8 ucTime_cnt_1S = 0;
+  28   1              
+  29   1              //
+  30   1              if(0 == a_iHALL)
+  31   1              {
+  32   2                      //hall on
+  33   2                      ucTime_cnt2 = 0;
+  34   2                      ucTime_cnt1++;
+  35   2                      if(ucTime_cnt1 >= c_ucTime_cnt)
+  36   2                      {
+  37   3                              ucTime_cnt1 = 0;
+  38   3                              ucHall_status = 1;
+  39   3                      }
+  40   2              }
+  41   1              else
+  42   1              {
+  43   2                      //hall out
+  44   2                      ucTime_cnt1 =0;
+  45   2                      ucTime_cnt2++;
+  46   2                      if(ucTime_cnt2 >= c_ucTime_cnt)
+  47   2                      {
+  48   3                              ucTime_cnt2 = 0;
+  49   3                              ucHall_status = 0;
+  50   3                      }
+  51   2              }
+  52   1      
+  53   1          //
+C51 COMPILER V9.52.0.0   APP_HALL                                                          03/27/2020 11:39:35 PAGE 2   
+
+  54   1          if(1 == ucHall_status)
+  55   1          {
+  56   2              ucTime_cnt_1S++;
+  57   2              if(ucTime_cnt_1S >= c_ucTime_cnt_1S)
+  58   2              {
+  59   3                  ucTime_cnt_1S = 0;
+  60   3      
+  61   3                  uwAuto_off_time++;
+  62   3                  if(uwAuto_off_time >= c_uwAuto_off_time)
+  63   3                  {
+  64   4                      uwAuto_off_time = 0;
+  65   4                      app_bt_send_key_long();
+  66   4                  }
+  67   3              }
+  68   2          }
+  69   1          else
+  70   1          {
+  71   2              ucTime_cnt_1S = 0;
+  72   2              uwAuto_off_time = 0;
+  73   2          }
+  74   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    106    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

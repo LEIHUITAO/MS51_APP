@@ -1,0 +1,78 @@
+C51 COMPILER V9.00   SYS_ADC                                                               11/04/2020 15:29:22 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SYS_ADC
+OBJECT MODULE PLACED IN .\Output\Sys_Adc.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Sys_Adc.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
+                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Adc.lst) TABS(2) OBJECT(.\Ou
+                    -tput\Sys_Adc.obj)
+
+line level    source
+
+   1          //*****************文*件*信*息********************************************
+   2          // *文 件 名：Init.c
+   3          // *版　  本：V1.0
+   4          // *创 建 人：
+   5          // *日　  期：
+   6          // *描　  述：
+   7          // *
+   8          // *当前版本：V1.0
+   9          // *修 改 人：
+  10          // *日　  期：
+  11          // *描　  述：
+  12          //************************************************************************
+  13          #include "Includes.h"
+  14          
+  15          #define DEF_ADC_CH_ENABLE  ENABLE_ADC_CH5
+  16          
+  17          static u16 uwAdc_data;
+  18          
+  19          void Adc_Init(void)
+  20          {
+  21   1          DEF_ADC_CH_ENABLE;
+  22   1          set_ADCF;
+  23   1        set_ADCS;
+  24   1          uwAdc_data = 0;
+  25   1      }
+  26          
+  27          u16 Adc_Data_Get(void)
+  28          {
+  29   1          return uwAdc_data;
+  30   1      }
+  31          
+  32          void Adc_server(void)
+  33          {
+  34   1        u16 uwTmp;
+  35   1          
+  36   1          if(ADCF == 0)
+  37   1          {
+  38   2              return;
+  39   2          }
+  40   1          clr_ADCF;           //清中断标志
+  41   1      
+  42   1        uwTmp = (ADCRH<<4) | (ADCRL & 0x0F);    // Get ADC convert result
+  43   1          
+  44   1        uwAdc_data += uwTmp;
+  45   1          uwAdc_data >>= 1;
+  46   1      
+  47   1          DEF_ADC_CH_ENABLE;
+  48   1        
+  49   1          //
+  50   1          set_ADCS;
+  51   1      }
+
+
+C51 COMPILER V9.00   SYS_ADC                                                               11/04/2020 15:29:22 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     99    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

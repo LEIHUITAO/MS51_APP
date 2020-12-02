@@ -1,0 +1,181 @@
+C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_LED
+OBJECT MODULE PLACED IN .\Output\App_Led.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Led.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
+                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Led.lst) OBJECT(.\Output\App
+                    -_Led.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "App_Led.h"
+   3          
+   4          xdata u8 ubLed_Mode;
+   5          
+   6          xdata u8 ubLed_Disp;
+   7          xdata u8 ubLed_Disp_Bak;
+   8          
+   9          xdata u8 ubLed_Time;
+  10          xdata u8 ubLed_Num;
+  11          
+  12          void    App_Led_Init()
+  13          {       
+  14   1              ubLed_Mode = E_LED_OFF;
+  15   1              ubLed_Disp = E_DISP_OFF;
+  16   1              ubLed_Disp_Bak = E_DISP_OFF;
+  17   1              ubLed_Time = 0;
+  18   1              ubLed_Num = 0;
+  19   1      }
+  20          
+  21          void Led_Disp_Set()
+  22          {
+  23   1              //
+  24   1              if(ubLed_Disp_Bak == E_DISP_SLOW)               //慢闪时，可以打断
+  25   1              {
+  26   2                      if(ubLed_Disp == ubLed_Disp_Bak)
+  27   2                      {
+  28   3                              return;
+  29   3                      }
+  30   2                      else
+  31   2                      {
+  32   3                              goto __Led_Disp_Set_Updata;
+  33   3                      }
+  34   2              }
+  35   1              else if(ubLed_Disp_Bak != E_DISP_OFF)
+  36   1              {
+  37   2                      return;
+  38   2              }
+  39   1      
+  40   1      __Led_Disp_Set_Updata:
+  41   1              switch(ubLed_Disp)
+  42   1              {
+  43   2              case E_DISP_FAST:
+  44   2                      {
+  45   3                              ubLed_Time = c_ubLed_Time_Fast;
+  46   3                              ubLed_Num = 2;
+  47   3                  a_oLed_R = ~a_oLed_R;
+  48   3                      }break;
+  49   2              case E_DISP_SLOW:
+  50   2                      {
+  51   3                              ubLed_Time = c_ubLed_Time_Slow;
+  52   3                              ubLed_Num = 2;
+  53   3                              a_oLed_R = ~a_oLed_R;
+C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 2   
+
+  54   3                      }break;
+  55   2              case E_DISP_ON_ONE:
+  56   2                      {
+  57   3                              ubLed_Time = c_ubLed_Time_Fast;
+  58   3                              ubLed_Num = 1;
+  59   3                              a_oLed_R_On();
+  60   3                      }break;
+  61   2              }
+  62   1      
+  63   1              ubLed_Disp_Bak = ubLed_Disp;
+  64   1              ubLed_Disp = E_DISP_OFF;
+  65   1      }
+  66          
+  67          //
+  68          void Led_Main()
+  69          {
+  70   1              if(ubLed_Time == 0)
+  71   1              {
+  72   2                      return;
+  73   2              }
+  74   1      
+  75   1              ubLed_Time --;
+  76   1              if(ubLed_Time != 0)
+  77   1              {
+  78   2                      return;
+  79   2              }
+  80   1                      
+  81   1              //
+  82   1              switch(ubLed_Disp_Bak)
+  83   1              {
+  84   2              case E_DISP_FAST:
+  85   2                      {
+  86   3                              ubLed_Num --;
+  87   3                              if(ubLed_Num == 0)
+  88   3                              {
+  89   4                                      //完成
+  90   4                                      goto __Led_Main_Exit;
+  91   4                              }
+  92   3                              else
+  93   3                              {
+  94   4                                      ubLed_Time = c_ubLed_Time_Fast;
+  95   4      
+  96   4                      a_oLed_R = ~a_oLed_R;
+  97   4                              }
+  98   3                      }break;
+  99   2      
+ 100   2              case E_DISP_SLOW:
+ 101   2                      {
+ 102   3                              ubLed_Num --;
+ 103   3                              if(ubLed_Num == 0)
+ 104   3                              {
+ 105   4                                      //完成
+ 106   4                                      goto __Led_Main_Exit;
+ 107   4                              }
+ 108   3                              else
+ 109   3                              {
+ 110   4                                      ubLed_Time = c_ubLed_Time_Slow;
+ 111   4      
+ 112   4                      a_oLed_R = ~a_oLed_R;
+ 113   4                              }
+ 114   3                      }break;
+ 115   2      
+C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 3   
+
+ 116   2              case E_DISP_ON_ONE:
+ 117   2                      {
+ 118   3                              ubLed_Num --;
+ 119   3                              if(ubLed_Num == 0)
+ 120   3                              {
+ 121   4                                      //完成
+ 122   4                                      goto __Led_Main_Exit;
+ 123   4                              }
+ 124   3                              else
+ 125   3                              {
+ 126   4                                      ubLed_Time = c_ubLed_Time_Slow;
+ 127   4                              }
+ 128   3                      }break;
+ 129   2      
+ 130   2              default:
+ 131   2                      {
+ 132   3      __Led_Main_Exit:
+ 133   3                              ubLed_Disp_Bak = E_DISP_OFF;
+ 134   3      
+ 135   3                              Led_Disp_Set();                 //更新LED状态
+ 136   3                              if(ubLed_Disp_Bak == E_DISP_OFF)
+ 137   3                              {
+ 138   4                                      //不闪时选择设置模式
+ 139   4                                      if(ubLed_Mode == E_LED_OFF)
+ 140   4                                      {
+ 141   5                                              //off
+ 142   5                                              a_oLed_R_Off();
+ 143   5                                      }
+ 144   4                                      else
+ 145   4                                      {
+ 146   5                                              //on
+ 147   5                                              a_oLed_R_On();
+ 148   5                                      }
+ 149   4                              }       
+ 150   3                      }break;
+ 151   2              }
+ 152   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    215    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      5    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

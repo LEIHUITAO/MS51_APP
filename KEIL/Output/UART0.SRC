@@ -1,0 +1,396 @@
+; .\Output\UART0.SRC generated from: ..\Main\UART0.c
+; COMPILER INVOKED BY:
+;        D:\Program_Files\Keil_MDK\C51\BIN\C51.EXE ..\Main\UART0.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\UART0.lst) SRC(.\Output\UART0.SRC)
+
+$NOMOD51
+
+NAME	UART0
+
+AINDIDS	DATA	0F6H
+P0M1	DATA	0B1H
+RXD_1	BIT	080H.2
+P1M1	DATA	0B3H
+P0M2	DATA	0B2H
+P0	DATA	080H
+SADDR_1	DATA	0BBH
+P1M2	DATA	0B4H
+P1	DATA	090H
+TXD_1	BIT	090H.6
+AA	BIT	0C0H.2
+P3M1	DATA	0ACH
+P2	DATA	0A0H
+P3	DATA	0B0H
+P3M2	DATA	0ADH
+AC	BIT	0D0H.6
+WKCON	DATA	08FH
+RCTRIM0	DATA	084H
+EIE1	DATA	09CH
+RCTRIM1	DATA	085H
+EA	BIT	0A8H.7
+PWMCON0	DATA	0D8H
+PWMCON1	DATA	0DFH
+FE	BIT	098H.7
+EADC	BIT	0A8H.6
+PWMPH	DATA	0D1H
+IE	DATA	0A8H
+CKSWT	DATA	096H
+ADCF	BIT	0E8H.7
+EIP1	DATA	0FEH
+PWMPL	DATA	0D9H
+ADCHS0	BIT	0E8H.0
+TA	DATA	0C7H
+ADCHS1	BIT	0E8H.1
+ADCHS2	BIT	0E8H.2
+ES	BIT	0A8H.4
+ADCHS3	BIT	0E8H.3
+I2ADDR	DATA	0C1H
+PADC	BIT	0B8H.6
+IP	DATA	0B8H
+RI	BIT	098H.0
+EBOD	BIT	0A8H.5
+SI	BIT	0C0H.3
+CY	BIT	0D0H.7
+ADCS	BIT	0E8H.6
+FE_1	BIT	0F8H.7
+TI	BIT	098H.1
+LOAD	BIT	0D8H.6
+CKEN	DATA	097H
+PS	BIT	0B8H.4
+SP	DATA	081H
+OV	BIT	0D0H.2
+PWMINTC	DATA	0B7H
+PBOD	BIT	0B8H.5
+P0SR	DATA	0B2H
+EIPH	DATA	0F7H
+P1SR	DATA	0B4H
+P3SR	DATA	0ADH
+RI_1	BIT	0F8H.0
+TI_1	BIT	0F8H.1
+RCMP2H	DATA	0CBH
+ADCMPH	DATA	0CFH
+P00	BIT	080H.0
+P01	BIT	080H.1
+P10	BIT	090H.0
+PMEN	DATA	0FBH
+SBUF	DATA	099H
+PCON	DATA	087H
+P02	BIT	080H.2
+P11	BIT	090H.1
+P20	BIT	0A0H.0
+RCMP2L	DATA	0CAH
+P03	BIT	080H.3
+P12	BIT	090H.2
+P30	BIT	0B0H.0
+ADCDLY	DATA	0E3H
+ADCMPL	DATA	0CEH
+P04	BIT	080H.4
+P13	BIT	090H.3
+SCON	DATA	098H
+P05	BIT	080H.5
+P14	BIT	090H.4
+TMOD	DATA	089H
+TCON	DATA	088H
+P06	BIT	080H.6
+P15	BIT	090H.5
+P07	BIT	080H.7
+P16	BIT	090H.6
+P17	BIT	090H.7
+MOSI	BIT	080H.0
+MISO	BIT	080H.1
+SPCR	DATA	0F3H
+I2STAT	DATA	0BDH
+SPDR	DATA	0F5H
+PWMF	BIT	0D8H.5
+C0H	DATA	0E5H
+C1H	DATA	0E7H
+C2H	DATA	0EEH
+CHPCON	DATA	09FH
+IE0	BIT	088H.1
+IE1	BIT	088H.3
+C0L	DATA	0E4H
+SFRS	DATA	091H
+C1L	DATA	0E6H
+CM_RL2	BIT	0C8H.0
+B	DATA	0F0H
+C2L	DATA	0EDH
+SBUF_1	DATA	09AH
+IAPUEN	DATA	0A5H
+SCON_1	DATA	0F8H
+ACC	DATA	0E0H
+ET0	BIT	0A8H.1
+SPSR	DATA	0F4H
+IAPTRG	DATA	0A4H
+TF0	BIT	088H.5
+ET1	BIT	0A8H.3
+TF1	BIT	088H.7
+RB8	BIT	098H.2
+TF2	BIT	0C8H.7
+FBD	DATA	0D7H
+TH0	DATA	08CH
+IT0	BIT	088H.0
+EX0	BIT	0A8H.0
+RH3	DATA	0C6H
+TH1	DATA	08DH
+IT1	BIT	088H.2
+TB8	BIT	098H.3
+EX1	BIT	0A8H.2
+TH2	DATA	0CDH
+P	BIT	0D0H.0
+PDTCNT	DATA	0FAH
+SM0	BIT	098H.7
+TL0	DATA	08AH
+SM1	BIT	098H.6
+RL3	DATA	0C5H
+TL1	DATA	08BH
+SM2	BIT	098H.5
+I2CEN	BIT	0C0H.6
+TL2	DATA	0CCH
+P0S	DATA	0B1H
+EIE	DATA	09BH
+PT0	BIT	0B8H.1
+P1S	DATA	0B3H
+PT1	BIT	0B8H.3
+RS0	BIT	0D0H.3
+I2DAT	DATA	0BCH
+P2S	DATA	0B5H
+TR0	BIT	088H.4
+RS1	BIT	0D0H.4
+I2CLK	DATA	0BEH
+P3S	DATA	0ACH
+TR1	BIT	088H.6
+CLRPWM	BIT	0D8H.4
+SDA	BIT	090H.4
+PX0	BIT	0B8H.0
+TR2	BIT	0C8H.2
+EIPH1	DATA	0FFH
+PX1	BIT	0B8H.2
+ADCCON0	DATA	0E8H
+ADCCON1	DATA	0E1H
+ADCCON2	DATA	0E2H
+I2CON	DATA	0C0H
+DPH	DATA	083H
+RB8_1	BIT	0F8H.2
+EIP	DATA	0EFH
+TB8_1	BIT	0F8H.3
+PIF	DATA	0ECH
+DPL	DATA	082H
+SM0_1	BIT	0F8H.7
+PMD	DATA	0FCH
+IPH	DATA	0B7H
+SCL	BIT	090H.3
+SM1_1	BIT	0F8H.6
+I2TOC	DATA	0BFH
+SM2_1	BIT	0F8H.5
+ADCRH	DATA	0C3H
+IAPAH	DATA	0A7H
+REN	BIT	098H.4
+IAPFD	DATA	0AEH
+CAPCON0	DATA	092H
+I2CPX	BIT	0C0H.0
+T2MOD	DATA	0C9H
+T2CON	DATA	0C8H
+ADCRL	DATA	0C2H
+BODCON0	DATA	0A3H
+CAPCON1	DATA	093H
+STA	BIT	0C0H.5
+T3CON	DATA	0C4H
+BODCON1	DATA	0ABH
+IAPAL	DATA	0A6H
+CAPCON2	DATA	094H
+CAPCON3	DATA	0F1H
+CAPCON4	DATA	0F2H
+PWMRUN	BIT	0D8H.7
+SPCR2	DATA	0F3H
+SADEN	DATA	0B9H
+IAPCN	DATA	0AFH
+PWM0H	DATA	0D2H
+RXD	BIT	080H.7
+PNP	DATA	0D6H
+PWM1H	DATA	0D3H
+PWM2H	DATA	0D4H
+SADDR	DATA	0A9H
+CKCON	DATA	08EH
+STADC	BIT	080H.4
+TXD	BIT	080H.6
+PWM3H	DATA	0D5H
+PWM0L	DATA	0DAH
+PWM4H	DATA	0C4H
+PWM1L	DATA	0DBH
+PWM5H	DATA	0C5H
+AUXR1	DATA	0A2H
+CKDIV	DATA	095H
+PWM2L	DATA	0DCH
+PWM3L	DATA	0DDH
+RWK	DATA	086H
+F0	BIT	0D0H.5
+PWM4L	DATA	0CCH
+STO	BIT	0C0H.4
+ETGSEL0	BIT	0E8H.4
+REN_1	BIT	0F8H.4
+PWM5L	DATA	0CDH
+ETGSEL1	BIT	0E8H.5
+PICON	DATA	0E9H
+PIOCON0	DATA	0DEH
+PSW	DATA	0D0H
+PINEN	DATA	0EAH
+PIOCON1	DATA	0C6H
+PDTEN	DATA	0F9H
+WDCON	DATA	0AAH
+PIPEN	DATA	0EBH
+SADEN_1	DATA	0BAH
+?PR?_Delay?UART0     SEGMENT CODE 
+?DT?_Delay?UART0     SEGMENT DATA OVERLAYABLE 
+?PR?main?UART0       SEGMENT CODE 
+	EXTRN	CODE (_InitialUART0_Timer3)
+	EXTRN	CODE (_Send_Data_To_UART0)
+	EXTRN	CODE (?C_STARTUP)
+	PUBLIC	main
+	PUBLIC	_Delay
+
+	RSEG  ?DT?_Delay?UART0
+?_Delay?BYTE:
+       time?040:   DS   2
+; /*---------------------------------------------------------------------------------------------------------*/
+; /*                                                                                                         */
+; /* Copyright(c) 2017 Nuvoton Technology Corp. All rights reserved.                                         */
+; /*                                                                                                         */
+; /*---------------------------------------------------------------------------------------------------------*/
+; 
+; //***********************************************************************************************************
+; //  Nuvoton Technoledge Corp. 
+; //  Website: http://www.nuvoton.com
+; //  E-Mail : MicroC-8bit@nuvoton.com
+; //  Date   : Apr/21/2017
+; //***********************************************************************************************************
+; 
+; //***********************************************************************************************************
+; //  File Function: N76E003 UART-0 Mode1 demo code
+; //***********************************************************************************************************
+; #include "N76E003.h"
+; #include "Common.h"
+; #include "Delay.h"
+; #include "SFR_Macro.h"
+; #include "Function_define.h"
+; 
+; /******************************************************************************
+;  * FUNCTION_PURPOSE: Serial interrupt, echo received data.
+;  * FUNCTION_INPUTS : P0.7(RXD) serial input
+;  * FUNCTION_OUTPUTS: P0.6(TXD) serial output
+;  * Following setting in Common.c
+;  ******************************************************************************/
+; #if 0
+; //void InitialUART0_Timer1(UINT32 u32Baudrate)    //T1M = 1, SMOD = 1
+; //{
+; //		P06_Quasi_Mode;		
+; //		P07_Quasi_Mode;
+; //	
+; //    SCON = 0x52;     //UART0 Mode1,REN=1,TI=1
+; //    TMOD |= 0x20;    //Timer1 Mode1
+; //    
+; //    set_SMOD;        //UART0 Double Rate Enable
+; //    set_T1M;
+; //    clr_BRCK;        //Serial port 0 baud rate clock source = Timer1
+; 
+; // 
+; //#ifdef FOSC_160000
+; //    TH1 = 256 - (1000000/u32Baudrate+1);               /*16 MHz */
+; //#endif    	
+; //    set_TR1;
+; //}
+; ////---------------------------------------------------------------
+; //void InitialUART0_Timer3(UINT32 u32Baudrate) //use timer3 as Baudrate generator
+; //{
+; //		P06_Quasi_Mode;
+; //		P07_Quasi_Mode;	
+; //	
+; //    SCON = 0x52;     //UART0 Mode1,REN=1,TI=1
+; //    set_SMOD;        //UART0 Double Rate Enable
+; //    T3CON &= 0xF8;   //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1)
+; //    set_BRCK;        //UART0 baud rate clock source = Timer3
+; 
+; //#ifdef FOSC_160000
+; //	RH3    = HIBYTE(65536 - (1000000/u32Baudrate)-1);  		/*16 MHz */
+; //  RL3    = LOBYTE(65536 - (1000000/u32Baudrate)-1);			/*16 MHz */
+; //#endif
+; //    set_TR3;         //Trigger Timer3
+; //}
+; #endif
+; 
+; void Delay(int time)
+
+	RSEG  ?PR?_Delay?UART0
+_Delay:
+	USING	0
+			; SOURCE LINE # 67
+	MOV  	time?040,R6
+	MOV  	time?040+01H,R7
+; {
+			; SOURCE LINE # 68
+;     #pragma asm 
+;     MOV A,R7
+	  MOV A,R7
+;     MOV R5,A
+	  MOV R5,A
+; 
+	  
+;     LOOP:    
+	  LOOP:    
+;     MOV A,R5
+	  MOV A,R5
+;     
+	  
+;     MOV R7,A 
+	  MOV R7,A 
+;     D2: DJNZ R7,$   
+	  D2: DJNZ R7,$   
+;     
+	  
+;     DJNZ R6,LOOP
+	  DJNZ R6,LOOP
+;     #pragma endasm
+; }
+			; SOURCE LINE # 81
+	RET  	
+; END OF _Delay
+
+; 
+; /*******************************************************************************
+;  * FUNCTION_PURPOSE: Main function 
+;  ******************************************************************************/
+; void main (void)
+
+	RSEG  ?PR?main?UART0
+main:
+	USING	0
+			; SOURCE LINE # 86
+; {
+			; SOURCE LINE # 87
+;     Delay(0x1234);
+			; SOURCE LINE # 88
+	MOV  	R7,#034H
+	MOV  	R6,#012H
+	LCALL	_Delay
+; 
+; #if 0	
+;     InitialUART0_Timer1(9600);           //UART0 Baudrate initial,T1M=0,SMOD=0
+;     while(1)
+;     Send_Data_To_UART0(0x55);
+; #else
+; 		InitialUART0_Timer3(115200);
+			; SOURCE LINE # 95
+	MOV  	R7,#00H
+	MOV  	R6,#0C2H
+	MOV  	R5,#01H
+	MOV  	R4,#00H
+	LCALL	_InitialUART0_Timer3
+?C0002:
+;     while(1)
+			; SOURCE LINE # 96
+;     Send_Data_To_UART0(0x55);
+			; SOURCE LINE # 97
+	MOV  	R7,#055H
+	LCALL	_Send_Data_To_UART0
+	SJMP 	?C0002
+; END OF main
+
+	END

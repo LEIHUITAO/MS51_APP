@@ -1,0 +1,252 @@
+C51 COMPILER V9.52.0.0   IR_REV                                                            12/13/2019 21:42:21 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE IR_REV
+OBJECT MODULE PLACED IN .\Output\IR_Rev.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\IR_Rev.C OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\
+                    -Library\Device\Include) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\IR_Rev.lst) OBJECT(.\Output\IR_Rev.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "IR_Rev.H"
+   3          #include "Sys_Port.h"
+   4          
+   5          //全局变量
+   6          bool    fIR_Rx_OK;
+   7          bool    fIR_Rx_Repeat_OK;
+   8          
+   9          u16 uwIR_Rx_ID;
+  10          u8 ubIR_Rx_Data;
+  11          
+  12          //局部变量
+  13          u8      fRxNow;
+  14          u8      fRxBak;
+  15          
+  16          bool    fRxHeadHighOK;  
+  17          bool    fRxHeadOK;
+  18          
+  19          u8      ubRxDataCnt;
+  20          u8      ubRxIntCnt;
+  21          u8      ubRxLowCnt;
+  22          u8      ubRxDataTmp[c_Rx_Data_Byte];
+  23          u8  ubRxTmp;
+  24          
+  25          u8  ubRxRepeatNum;
+  26          u16 uwRxRepeatCnt;
+  27          
+  28          void IR_Rev_IRQ(void)
+  29          {
+  30   1              //=====================================================
+  31   1              fRxNow = 0;
+  32   1              if(a_iIR_Rx)                                    //read Rx status
+  33   1              {
+  34   2                      fRxNow = 1;
+  35   2              }
+  36   1      
+  37   1              //=====================================================
+  38   1              //超时清长按
+  39   1              if(fIR_Rx_Repeat_OK)
+  40   1              {
+  41   2                      uwRxRepeatCnt ++;
+  42   2                      if(uwRxRepeatCnt > c_Repeat_clr_time)
+  43   2                      {
+  44   3                              uwRxRepeatCnt = 0;
+  45   3                              ubRxRepeatNum = 0;
+  46   3                              fIR_Rx_Repeat_OK = 0;
+  47   3                              goto __IR_Rev_IRQ_Rst;
+  48   3                      }
+  49   2              }
+  50   1              
+  51   1              //=====================================================
+  52   1              //cnt
+  53   1              if(fRxNow == fRxBak)
+  54   1              {
+C51 COMPILER V9.52.0.0   IR_REV                                                            12/13/2019 21:42:21 PAGE 2   
+
+  55   2                      if(ubRxIntCnt != 0xFF)
+  56   2                      {
+  57   3                              ubRxIntCnt ++;
+  58   3                      }
+  59   2                      return;
+  60   2              }
+  61   1              
+  62   1              fRxBak = fRxNow;                        //bak io status
+  63   1              //BCPL(a_oTxPin);                       //debug
+  64   1              
+  65   1              //小于最小计数？
+  66   1              if(ubRxIntCnt < c_DATA_LEVEL_COUNT_MIN)
+  67   1              {
+  68   2                      //Rst
+  69   2      __IR_Rev_IRQ_Rst:
+  70   2                      ubRxIntCnt = 0;
+  71   2                      fRxHeadOK = 0;
+  72   2                      ubRxLowCnt = 0;
+  73   2                      ubRxDataCnt = 0;
+  74   2                      return;
+  75   2              }
+  76   1              
+  77   1              //head
+  78   1              if(fRxHeadOK == 0)
+  79   1              {
+  80   2                      if(fRxBak)
+  81   2                      {
+  82   3                              //________
+  83   3                              if((ubRxIntCnt < c_HEAD_LOW_TIM_MIN) || (ubRxIntCnt > c_HEAD_LOW_TIM_MAX))
+  84   3                              {
+  85   4                                      goto __IR_Rev_IRQ_Rst;
+  86   4                              }
+  87   3                              else
+  88   3                              {
+  89   4                                      fRxHeadHighOK = 1;
+  90   4      
+  91   4                                      //clr
+  92   4      __IR_Rev_IRQ_Clr:
+  93   4                                      ubRxIntCnt = 0;
+  94   4                                      return;
+  95   4                              }               
+  96   3                      }
+  97   2                      else
+  98   2                      {
+  99   3                              //---
+ 100   3                              if(fRxHeadHighOK)
+ 101   3                              {
+ 102   4                                      fRxHeadHighOK = 0;
+ 103   4      
+ 104   4                                      if((ubRxIntCnt < c_HEAD_REPEAT_TIM_MIN) || (ubRxIntCnt > c_HEAD_HIGH_TIM_MAX))
+ 105   4                                      {
+ 106   5      
+ 107   5                                                      //err
+ 108   5      __IR_Rev_IRQ_Err:
+ 109   5                                                      ubRxIntCnt = 0;
+ 110   5                                                      fRxHeadOK = 0;
+ 111   5                                                      ubRxLowCnt = 0;
+ 112   5                                                      ubRxDataCnt = 0;
+ 113   5                                                      fIR_Rx_Repeat_OK = 0;
+ 114   5                                                      return;
+ 115   5                                      }
+ 116   4                                      else
+C51 COMPILER V9.52.0.0   IR_REV                                                            12/13/2019 21:42:21 PAGE 3   
+
+ 117   4                                      {
+ 118   5                                              //重复码？
+ 119   5                                              if(ubRxIntCnt < c_HEAD_REPEAT_TIM_MAX)
+ 120   5                                              {
+ 121   6                                                      if(ubRxRepeatNum >= c_Repeat_Num_Max)
+ 122   6                                                      {
+ 123   7      
+ 124   7                                                              fIR_Rx_Repeat_OK = 1;
+ 125   7                                                              uwRxRepeatCnt = 0;
+ 126   7                                                              //Uart_TX_INT(0xA1,0,0);                //debug
+ 127   7                                                      }
+ 128   6                                                      else
+ 129   6                                                      {
+ 130   7                                                              ubRxRepeatNum ++;
+ 131   7                                                      }
+ 132   6                                                              goto __IR_Rev_IRQ_Rst;
+ 133   6                                              }
+ 134   5                                              
+ 135   5                                              fRxHeadOK = 1;
+ 136   5                                              fIR_Rx_Repeat_OK = 0;
+ 137   5                                              ubRxDataCnt = 0;
+ 138   5                                              ubRxIntCnt = 1;                                         //frist head
+ 139   5                                              return;
+ 140   5                                      }
+ 141   4                              }
+ 142   3                              else
+ 143   3                              {
+ 144   4                                      goto __IR_Rev_IRQ_Rst;
+ 145   4                              }
+ 146   3                              
+ 147   3                      }
+ 148   2              }
+ 149   1      
+ 150   1              //BCPL(a_oTxPin);                       //debug
+ 151   1      
+ 152   1              //接收数据
+ 153   1              if(fRxBak)
+ 154   1              {
+ 155   2                      ubRxLowCnt = ubRxIntCnt;                //保存电平数值
+ 156   2                      goto __IR_Rev_IRQ_Clr;
+ 157   2              }
+ 158   1              
+ 159   1              //CYCLE err?
+ 160   1              ubRxTmp = ubRxIntCnt + ubRxLowCnt;
+ 161   1              if((ubRxTmp < c_DATA_CYCLE_COUNT_MIN) || (ubRxTmp > c_DATA_CYCLE_COUNT_MAX))
+ 162   1              {
+ 163   2                      goto __IR_Rev_IRQ_Rst;
+ 164   2              }
+ 165   1              
+ 166   1              //data >>
+ 167   1              ubRxDataTmp[0] >>= 1;
+ 168   1              ubRxTmp = ubRxDataTmp[1] & 0x01;
+ 169   1              if(ubRxTmp)
+ 170   1              {
+ 171   2                      ubRxDataTmp[0] |= 0x80;
+ 172   2              }
+ 173   1              
+ 174   1              ubRxDataTmp[1] >>= 1;
+ 175   1              ubRxTmp = ubRxDataTmp[2] & 0x01;
+ 176   1              if(ubRxTmp)
+ 177   1              {
+ 178   2                      ubRxDataTmp[1] |= 0x80;
+C51 COMPILER V9.52.0.0   IR_REV                                                            12/13/2019 21:42:21 PAGE 4   
+
+ 179   2              }
+ 180   1      
+ 181   1              ubRxDataTmp[2] >>= 1;
+ 182   1              ubRxTmp = ubRxDataTmp[3] & 0x01;
+ 183   1              if(ubRxTmp)
+ 184   1              {
+ 185   2                      ubRxDataTmp[2] |= 0x80;
+ 186   2              }
+ 187   1              ubRxDataTmp[3] >>= 1;
+ 188   1              
+ 189   1              //判断 0/1
+ 190   1              ubRxTmp = ubRxLowCnt + ubRxLowCnt;
+ 191   1              if(ubRxTmp < ubRxIntCnt)
+ 192   1              {
+ 193   2                      //1
+ 194   2                      ubRxDataTmp[3] |= 0x80;
+ 195   2              }
+ 196   1              
+ 197   1              //data cnt
+ 198   1              ubRxDataCnt ++;
+ 199   1              if( ubRxDataCnt < (c_Rx_Data_Byte*8))
+ 200   1              {
+ 201   2                      goto __IR_Rev_IRQ_Clr;
+ 202   2              }
+ 203   1              
+ 204   1              //verify data
+ 205   1              ubRxTmp = ubRxDataTmp[3]^0xff;
+ 206   1              if(ubRxDataTmp[2] != ubRxTmp)
+ 207   1              {
+ 208   2                      goto __IR_Rev_IRQ_Err;
+ 209   2              }
+ 210   1      
+ 211   1              fIR_Rx_OK = 1;
+ 212   1              fRxHeadOK = 0;
+ 213   1      
+ 214   1              //清长按
+ 215   1              fIR_Rx_Repeat_OK = 0;
+ 216   1              uwRxRepeatCnt = 0;
+ 217   1              ubRxRepeatNum = 0;
+ 218   1              
+ 219   1              uwIR_Rx_ID = ubRxDataTmp[0]<<8 | ubRxDataTmp[1];
+ 220   1              ubIR_Rx_Data = ubRxDataTmp[2];  
+ 221   1      
+ 222   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    331    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      4    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,277 @@
+C51 COMPILER V9.00   APP_BLUE_LED                                                          11/04/2020 15:29:23 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE APP_BLUE_LED
+OBJECT MODULE PLACED IN .\Output\App_blue_led.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_blue_led.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Ma
+                    -in;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_blue_led.lst) TABS(2) O
+                    -BJECT(.\Output\App_blue_led.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "App_blue_led.h"
+   3          #include "Sys_Init.h"
+   4          
+   5          //*5ms
+   6          #define c_ucDisp_time_fast 40
+   7          #define c_ucDisp_time_slow 200
+   8          
+   9          #define c_ucDisp_time_fast_3 40
+  10          #define c_ucDisp_time_slow_3 200
+  11          
+  12          #define M_BLUE_LED_ON()     {a_oLed_blue=0;}
+  13          #define M_BLUE_LED_OFF()    {a_oLed_blue=1;}
+  14          
+  15          u8 ucLed_mode;
+  16          static u8 ucLed_disp_n;
+  17          u8 ucDisp_time = 0;
+  18          
+  19          extern u8 bt_connection_status;
+  20          extern u8 current_writing_status;
+  21          extern u8 pen_up_mark_status;
+  22          extern u8 force_page_feed_current_state;
+  23          
+  24          extern u8 ucLed_mode_full;
+  25          
+  26          void blue_led_init(void)
+  27          {
+  28   1          blue_led_mode(E_LED_MODE_OFF);
+  29   1      }
+  30          
+  31          void blue_led_mode(T_LED_MODE mode)
+  32          {
+  33   1        ucLed_mode = mode;
+  34   1          
+  35   1          //
+  36   1          switch(mode)
+  37   1          {
+  38   2              case E_LED_MODE_DISP_FAST_3:
+  39   2              {
+  40   3                  ucDisp_time = c_ucDisp_time_fast_3 - 10;
+  41   3                  
+  42   3                  if(0 == ucLed_disp_n)
+  43   3                  {
+  44   4                      ucLed_disp_n = 3*2;
+  45   4                  }
+  46   3              }break;
+  47   2              
+  48   2              case E_LED_MODE_DISP_SLOW_3:
+  49   2              {
+  50   3                  ucDisp_time = c_ucDisp_time_slow_3 - 10;
+  51   3                  
+  52   3                  if(0 == ucLed_disp_n)
+  53   3                  {
+C51 COMPILER V9.00   APP_BLUE_LED                                                          11/04/2020 15:29:23 PAGE 2   
+
+  54   4                      ucLed_disp_n = 3*2;
+  55   4                  }
+  56   3              }break;
+  57   2          }
+  58   1      }
+  59          
+  60          void blue_led_server(void)
+  61          {
+  62   1          static xdata u8 ucDisp_cpl = 0;
+  63   1      
+  64   1          switch(ucLed_mode)
+  65   1          {
+  66   2              case E_LED_MODE_OFF: //off
+  67   2              {
+  68   3                  M_BLUE_LED_OFF();
+  69   3                  ucDisp_time = 0;
+  70   3                  ucDisp_cpl = 1;
+  71   3              }break;
+  72   2      
+  73   2              case E_LED_MODE_ON: //on
+  74   2              {
+  75   3                  /*if(current_writing_status == 1)
+  76   3                  {
+  77   3                      current_writing_status = 0;
+  78   3                  }*/
+  79   3                  if(pen_up_mark_status == 1)
+  80   3                  {
+  81   4                      ucDisp_time++;
+  82   4                      if(ucDisp_time >= c_ucDisp_time_slow)
+  83   4                      {
+  84   5                          ucDisp_time = 0;
+  85   5                          pen_up_mark_status = 0;
+  86   5                          M_BLUE_LED_ON();
+  87   5                          ucDisp_cpl = 0;
+  88   5                      }
+  89   4                  }
+  90   3                  else
+  91   3                  {
+  92   4                      M_BLUE_LED_ON();
+  93   4                      ucDisp_time = 0;
+  94   4                      ucDisp_cpl = 0;
+  95   4                  }
+  96   3              }break;
+  97   2      
+  98   2              case E_LED_MODE_DISP_FAST:
+  99   2              {
+ 100   3                  ucDisp_time++;
+ 101   3                  if(ucDisp_time >= c_ucDisp_time_fast)
+ 102   3                  {
+ 103   4                      ucDisp_time = 0;
+ 104   4      
+ 105   4                      if(0 == ucDisp_cpl)
+ 106   4                      {
+ 107   5                          M_BLUE_LED_ON();
+ 108   5                          ucDisp_cpl = 1;
+ 109   5                      }
+ 110   4                      else
+ 111   4                      {
+ 112   5                          M_BLUE_LED_OFF();
+ 113   5                          ucDisp_cpl = 0;
+ 114   5                      }
+ 115   4                  }
+C51 COMPILER V9.00   APP_BLUE_LED                                                          11/04/2020 15:29:23 PAGE 3   
+
+ 116   3              }break;
+ 117   2      
+ 118   2              case E_LED_MODE_DISP_SLOW:
+ 119   2              {
+ 120   3                  /*if(current_writing_status == 0)
+ 121   3                  {
+ 122   3                      current_writing_status = 1;
+ 123   3                  }*/
+ 124   3                  ucDisp_time++;
+ 125   3                  if(ucDisp_time >= c_ucDisp_time_slow)
+ 126   3                  {
+ 127   4                      ucDisp_time = 0;
+ 128   4      
+ 129   4                      if(0 == ucDisp_cpl)
+ 130   4                      {
+ 131   5                M_BLUE_LED_OFF();
+ 132   5                          ucDisp_cpl = 1;
+ 133   5                      }
+ 134   4                      else
+ 135   4                      {
+ 136   5                          M_BLUE_LED_ON();
+ 137   5                          ucDisp_cpl = 0;
+ 138   5                      }
+ 139   4                  }
+ 140   3              }break;
+ 141   2              
+ 142   2              case E_LED_MODE_DISP_FAST_3:
+ 143   2              {
+ 144   3                  if(bt_connection_status == 1 && force_page_feed_current_state == 1)
+ 145   3                  {
+ 146   4                      if(ucLed_mode_full == E_LED_MODE_OFF)
+ 147   4                      {
+ 148   5                          ucDisp_time++;
+ 149   5                          if(ucDisp_time >= c_ucDisp_time_fast_3)
+ 150   5                          {
+ 151   6                              ucDisp_time = 0;
+ 152   6      
+ 153   6                              if(0 != ucLed_disp_n)
+ 154   6                              {
+ 155   7                                  ucLed_disp_n --;
+ 156   7                                  
+ 157   7                                  if(0 == ucDisp_cpl)
+ 158   7                                  {
+ 159   8                                      M_BLUE_LED_ON();
+ 160   8                                      ucDisp_cpl = 1;
+ 161   8                                  }
+ 162   7                                  else
+ 163   7                                  {
+ 164   8                                      M_BLUE_LED_OFF();
+ 165   8                                      ucDisp_cpl = 0;
+ 166   8                                  }
+ 167   7                              }
+ 168   6                              else
+ 169   6                              {
+ 170   7                                  M_BLUE_LED_OFF();
+ 171   7                                  bt_connection_status = 0;
+ 172   7                                  //current_writing_status = 0;
+ 173   7                                  //ucLed_mode = E_LED_MODE_ON;
+ 174   7                                  ucDisp_cpl = 0;
+ 175   7                              }
+ 176   6                          }
+ 177   5                      }
+C51 COMPILER V9.00   APP_BLUE_LED                                                          11/04/2020 15:29:23 PAGE 4   
+
+ 178   4                  }
+ 179   3                  else
+ 180   3                  {
+ 181   4                      ucDisp_time++;
+ 182   4                      if(ucDisp_time >= c_ucDisp_time_fast_3)
+ 183   4                      {
+ 184   5                          ucDisp_time = 0;
+ 185   5      
+ 186   5                          if(0 != ucLed_disp_n)
+ 187   5                          {
+ 188   6                              ucLed_disp_n --;
+ 189   6                              
+ 190   6                              if(0 == ucDisp_cpl)
+ 191   6                              {
+ 192   7                                  M_BLUE_LED_ON();
+ 193   7                                  ucDisp_cpl = 1;
+ 194   7                              }
+ 195   6                              else
+ 196   6                              {
+ 197   7                                  M_BLUE_LED_OFF();
+ 198   7                                  ucDisp_cpl = 0;
+ 199   7                              }
+ 200   6                          }
+ 201   5                          else
+ 202   5                          {
+ 203   6                              M_BLUE_LED_OFF();
+ 204   6                              bt_connection_status = 0;
+ 205   6                              //current_writing_status = 0;
+ 206   6                              //ucLed_mode = E_LED_MODE_ON;
+ 207   6                              ucDisp_cpl = 0;
+ 208   6                          }
+ 209   5                      }
+ 210   4                  }
+ 211   3              }break;
+ 212   2              
+ 213   2              case E_LED_MODE_DISP_SLOW_3:
+ 214   2              {
+ 215   3                  ucDisp_time++;
+ 216   3                  if(ucDisp_time >= c_ucDisp_time_slow_3)
+ 217   3                  {
+ 218   4                      ucDisp_time = 0;
+ 219   4      
+ 220   4                      if(0 != ucLed_disp_n)
+ 221   4                      {
+ 222   5                          ucLed_disp_n --;
+ 223   5                          
+ 224   5                          if(0 == ucDisp_cpl)
+ 225   5                          {
+ 226   6                              M_BLUE_LED_ON();
+ 227   6                              ucDisp_cpl = 1;
+ 228   6                          }
+ 229   5                          else
+ 230   5                          {
+ 231   6                              M_BLUE_LED_OFF();
+ 232   6                              ucDisp_cpl = 0;
+ 233   6                          }
+ 234   5                      }
+ 235   4                      else
+ 236   4                      {
+ 237   5                          M_BLUE_LED_OFF();
+ 238   5                          ucDisp_cpl = 0;
+ 239   5                      }
+C51 COMPILER V9.00   APP_BLUE_LED                                                          11/04/2020 15:29:23 PAGE 5   
+
+ 240   4                  }
+ 241   3              }break;
+ 242   2          }
+ 243   1      
+ 244   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    304    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,53 @@
+C51 COMPILER V9.00   APP_RESET_BT                                                          11/04/2020 15:29:23 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE APP_RESET_BT
+OBJECT MODULE PLACED IN .\Output\App_Reset_BT.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Reset_BT.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Ma
+                    -in;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Reset_BT.lst) TABS(2) O
+                    -BJECT(.\Output\App_Reset_BT.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "App_Reset_BT.h"
+   3          #include "Sys_Init.h"
+   4          
+   5          #define M_RESET_BT_ON()   {a_oReset_BT=0;}
+   6          #define M_RESET_BT_OFF()  {a_oReset_BT=1;}
+   7          
+   8          #define c_uwReset_time      100      
+   9          
+  10          static u16 uwReset_time;
+  11          
+  12          void App_Reset_BT_start(void)
+  13          {
+  14   1          M_RESET_BT_ON();
+  15   1          uwReset_time = c_uwReset_time;
+  16   1      }
+  17          
+  18          void App_Reset_BT_server(void)
+  19          {
+  20   1          if(uwReset_time > 0)
+  21   1          {
+  22   2              uwReset_time--;
+  23   2              if(0 == uwReset_time)
+  24   2              {
+  25   3                  M_RESET_BT_OFF();
+  26   3              }
+  27   2          }
+  28   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     37    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,182 @@
+C51 COMPILER V9.52.0.0   APP_0AC                                                           12/15/2019 13:28:29 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_0AC
+OBJECT MODULE PLACED IN .\Output\App_0AC.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\0AC\App_0AC.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Mai
+                    -n;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_0AC.lst) OBJECT(.\Output
+                    -\App_0AC.obj)
+
+line level    source
+
+   1          #include    "includes.h"
+   2          #include    "App_0AC.h"
+   3          #include    "App_Pwm.h"
+   4          
+   5          volatile u8     ubCycle;
+   6          volatile u8     ub0AC_Delay_Start;
+   7          volatile bit f0AC_OK;
+   8          
+   9          //
+  10          #define DEF_INT_TIME_SET        118     //100us
+  11          static void Timer1_INT_Initial(void);
+  12          
+  13          //
+  14          static void App_0AC_INT_Step1(void);
+  15          static void App_0AC_TIME_Step2(void);
+  16          
+  17          //过零上升沿调用
+  18          static void App_0AC_INT_Step1(void)
+  19          {
+  20   1          //过零检测初始化
+  21   1          f0AC_OK = 0;
+  22   1              ub0AC_Delay_Start = 0;
+  23   1              ubCycle = 0;  
+  24   1      }
+  25          
+  26          //定时中断调用
+  27          static void App_0AC_TIME_Step2(void)
+  28          {
+  29   1          if(f0AC_OK == 0)
+  30   1              {
+  31   2                      ub0AC_Delay_Start ++;
+  32   2                      if(ub0AC_Delay_Start >= c_ub0AC_Delay_Start)
+  33   2                      {
+  34   3                              ub0AC_Delay_Start = 0;
+  35   3                              f0AC_OK = 1;
+  36   3                      }
+  37   2              }
+  38   1              else
+  39   1              {
+  40   2                      ubCycle ++;
+  41   2                      if(ubCycle >= c_ubPwm_Cycle_Max)
+  42   2                      {
+  43   3                              ubCycle = 1;                    
+  44   3                      }
+  45   2      
+  46   2                      //
+  47   2                      if(ubPwm_Duty == 0)
+  48   2                      {
+  49   3                              m_oZero_Pwm_Off();
+  50   3                      }
+  51   2                      else
+  52   2                      {
+  53   3                              if(ubPwm_Duty >= ubCycle)
+C51 COMPILER V9.52.0.0   APP_0AC                                                           12/15/2019 13:28:29 PAGE 2   
+
+  54   3                              {
+  55   4                                      m_oZero_Pwm_On();
+  56   4                              }
+  57   3                              else
+  58   3                              {
+  59   4                                      m_oZero_Pwm_Off();
+  60   4                              }
+  61   3                      }
+  62   2              }
+  63   1      }
+  64          
+  65          void App_0AC_Init(void)
+  66          {
+  67   1              ubCycle = 0;
+  68   1              ub0AC_Delay_Start = 0;
+  69   1              f0AC_OK = 0;
+  70   1      
+  71   1          //TIMER
+  72   1          Timer1_INT_Initial();
+  73   1      }
+  74          
+  75          void App_0AC_Check_INT(void)
+  76          {
+  77   1          static u8 ucIO_BAK = 0;
+  78   1          u8 ucIO;
+  79   1          ucIO = (u8)a_i0AC;
+  80   1          
+  81   1          if(ucIO_BAK ^ ucIO)
+  82   1          {
+  83   2              if(ucIO)
+  84   2              {
+  85   3                  //上升沿
+  86   3                  App_0AC_INT_Step1();
+  87   3      
+  88   3                  //TIME RESET CNT
+  89   3                  TH1 = DEF_INT_TIME_SET;            //initial counter values 
+  90   3                  TL1 = DEF_INT_TIME_SET;
+  91   3              }
+  92   2      
+  93   2              ucIO_BAK = ucIO;
+  94   2          }
+  95   1      }
+  96          
+  97          //********************************************************************************************************
+             -****
+  98          //********************************************************************************************************
+             -****
+  99          //TIMER 1 interrupt Initial setting
+ 100          static void Timer1_INT_Initial(void)
+ 101          {
+ 102   1          P17_PUSHPULL_MODE;
+ 103   1          TIMER1_MODE2_ENABLE;
+ 104   1          TIMER1_FSYS_DIV12;
+ 105   1        
+ 106   1          TH1 = DEF_INT_TIME_SET;            //initial counter values 
+ 107   1          TL1 = DEF_INT_TIME_SET;    
+ 108   1         
+ 109   1          ENABLE_TIMER1_INTERRUPT;                                    //enable Timer1 interrupt
+ 110   1        
+ 111   1          set_TCON_TR1;                                  //Timer1 run
+ 112   1      }
+ 113          
+C51 COMPILER V9.52.0.0   APP_0AC                                                           12/15/2019 13:28:29 PAGE 3   
+
+ 114          //TIMER 1 interrupt subroutine
+ 115          void Timer1_ISR (void) interrupt 3              //interrupt address is 0x000B
+ 116          {
+ 117   1          P17 = ~P17;
+ 118   1          App_0AC_TIME_Step2();
+ 119   1      }
+ 120          
+ 121          
+ 122          
+ 123          
+ 124          /*
+ 125          void Interrupt(void)
+ 126          {
+ 127                  pushaf;
+ 128          
+ 129                  //===============================================================
+ 130                  //过零上升沿
+ 131                  if(Intrq.PA0)
+ 132                  {
+ 133                          Intrq.PA0 = 0;
+ 134          
+ 135                          tm2ct = 0x00;
+ 136                          Intrq.TM2 = 0;
+ 137          
+ 138                          App_0AC_INT_step1();
+ 139                  }
+ 140          
+ 141                  //100us
+ 142                  if (Intrq.TM2)                          
+ 143                  {
+ 144                          Intrq.TM2 = 0;
+ 145          
+ 146                  App_0AC_TIME_Step2();
+ 147                          
+ 148                  }
+ 149                  popaf;
+ 150          }
+ 151          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    132    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

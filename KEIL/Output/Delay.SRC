@@ -1,0 +1,105 @@
+; .\Output\Delay.SRC generated from: ..\Main\Delay.c
+; COMPILER INVOKED BY:
+;        C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Delay.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS(2) SRC(.\Output\Delay.SRC)
+
+
+NAME	DELAY
+
+?PR?_Delay_US?DELAY  SEGMENT CODE 
+?PR?_Delay_MS?DELAY  SEGMENT CODE 
+?DT?_Delay_MS?DELAY  SEGMENT DATA OVERLAYABLE 
+	PUBLIC	_Delay_MS
+	PUBLIC	_Delay_US
+
+	RSEG  ?DT?_Delay_MS?DELAY
+?_Delay_MS?BYTE:
+     uwTime?141:   DS   2
+	ORG  2
+          i?142:   DS   2
+; #include "types.h"
+; 
+; //1T,主频16M时有效
+; void Delay_US(u16 uwTime)
+
+	RSEG  ?PR?_Delay_US?DELAY
+_Delay_US:
+	USING	0
+			; SOURCE LINE # 4
+;---- Variable 'uwTime?040' assigned to Register 'R6/R7' ----
+; {
+			; SOURCE LINE # 5
+;     uwTime = uwTime;
+			; SOURCE LINE # 6
+;     
+;     #pragma asm 
+;     INC R6;
+	  INC R6;
+;     
+	  
+; LOOP:    
+	  LOOP:    
+;     MOV R5,#2;
+	  MOV R5,#2;
+;     nop;
+	  nop;
+;     nop;
+	  nop;
+;     DJNZ R5,$;
+	  DJNZ R5,$;
+;     DJNZ R7,LOOP;
+	  DJNZ R7,LOOP;
+;     
+	  
+;     DJNZ R6,LOOP;
+	  DJNZ R6,LOOP;
+;     #pragma endasm
+; }
+			; SOURCE LINE # 20
+	RET  	
+; END OF _Delay_US
+
+; 
+; void Delay_MS(u16 uwTime)
+
+	RSEG  ?PR?_Delay_MS?DELAY
+_Delay_MS:
+	USING	0
+			; SOURCE LINE # 22
+	MOV  	uwTime?141,R6
+	MOV  	uwTime?141+01H,R7
+; {
+			; SOURCE LINE # 23
+;     u16 i;
+;     for(i=0;i<uwTime;i++)
+			; SOURCE LINE # 25
+	CLR  	A
+	MOV  	i?142,A
+	MOV  	i?142+01H,A
+?C0002:
+	CLR  	C
+	MOV  	A,i?142+01H
+	SUBB 	A,uwTime?141+01H
+	MOV  	A,i?142
+	SUBB 	A,uwTime?141
+	JNC  	?C0005
+;     {
+			; SOURCE LINE # 26
+;         Delay_US(1000);
+			; SOURCE LINE # 27
+	MOV  	R7,#0E8H
+	MOV  	R6,#03H
+	LCALL	_Delay_US
+;     }
+			; SOURCE LINE # 28
+	INC  	i?142+01H
+	MOV  	A,i?142+01H
+	JNZ  	?C0002
+	INC  	i?142
+?C0006:
+	SJMP 	?C0002
+; }			; SOURCE LINE # 29
+?C0005:
+	RET  	
+; END OF _Delay_MS
+
+	END

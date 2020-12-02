@@ -1,0 +1,140 @@
+C51 COMPILER V9.52.0.0   IDE_BUILD_INFO                                                    12/10/2019 23:00:01 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE IDE_BUILD_INFO
+OBJECT MODULE PLACED IN .\Output\IDE_Build_Info.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\IDE_Build_Info.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\
+                    -Main;..\Library\Device\Include) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\IDE_Build_Info.lst) OBJECT(.\Output\I
+                    -DE_Build_Info.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "Sys_Uart0_IRQ.h"
+   3          
+   4          #define     BUILD_UART_PRINT(Byte)        Uart0_Send_Byte_Push(Byte)       //串口打印驱动
+   5          
+   6          static code char IDE_BUILD_INFO[]={""__DATE__" "__TIME__""};  //日期：Mmm dd yyyy，时间：xx:xx:xx
+   7          
+   8          //4个字�?
+   9          void Build_Date_Get(u8 * Buff)
+  10          {
+  11   1          code u8 DATE_MM[][6]={
+  12   1                      "Jan 01",              // 1�?
+  13   1                      "Feb 02",              
+  14   1                      "Mar 03",            
+  15   1                      "Apr 04",            
+  16   1                      "May 05",           
+  17   1                      "Jun 06",      
+  18   1                      "Jul 07",
+  19   1                      "Aug 08",            
+  20   1                      "Sep 09",            
+  21   1                      "Oct 10",            
+  22   1                      "Nov 11",           
+  23   1                      "May 12",           
+  24   1          };
+  25   1          
+  26   1          u8 i;
+  27   1          u8 MM_Buff[2];
+  28   1          u8 DAY_Buff[2];
+  29   1      
+  30   1          //�?
+  31   1          MM_Buff[0] = '?';
+  32   1          MM_Buff[1] = '?';
+  33   1          for(i=0;i<12;i++)
+  34   1          {
+  35   2              if(IDE_BUILD_INFO[0] == DATE_MM[i][0] && IDE_BUILD_INFO[1] == DATE_MM[i][1] && IDE_BUILD_INFO[2] =
+             -= DATE_MM[i][2])
+  36   2              {
+  37   3                  MM_Buff[0] = DATE_MM[i][4];
+  38   3                  MM_Buff[1] = DATE_MM[i][5];
+  39   3                  break;
+  40   3              }
+  41   2          }
+  42   1          
+  43   1          //�?
+  44   1          for(i=0;i<2;i++)
+  45   1          {
+  46   2              DAY_Buff[i] = IDE_BUILD_INFO[i+4];
+  47   2          }
+  48   1          if(DAY_Buff[0] == ' ')
+  49   1          {
+  50   2              DAY_Buff[0] = '0';
+  51   2          }
+  52   1          
+C51 COMPILER V9.52.0.0   IDE_BUILD_INFO                                                    12/10/2019 23:00:01 PAGE 2   
+
+  53   1          //�?
+  54   1          Buff[0] = ((IDE_BUILD_INFO[7] & 0x0F) << 4) | (IDE_BUILD_INFO[8] & 0x0F);
+  55   1          Buff[1] = ((IDE_BUILD_INFO[9] & 0x0F) << 4) | (IDE_BUILD_INFO[10] & 0x0F);
+  56   1          
+  57   1          //�?
+  58   1          Buff[2] = ((MM_Buff[0] & 0x0F) << 4) | (MM_Buff[1] & 0x0F);
+  59   1          
+  60   1          //�?
+  61   1          Buff[3] = ((DAY_Buff[0] & 0x0F) << 4) | (DAY_Buff[1] & 0x0F);
+  62   1      }
+  63          
+  64          //3个字�?
+  65          void Build_Time_Get(u8 * Buff)
+  66          {
+  67   1          Buff[0] = ((IDE_BUILD_INFO[12] & 0x0F) << 4) | (IDE_BUILD_INFO[13] & 0x0F);
+  68   1          Buff[1] = ((IDE_BUILD_INFO[15] & 0x0F) << 4) | (IDE_BUILD_INFO[16] & 0x0F);
+  69   1          Buff[2] = ((IDE_BUILD_INFO[18] & 0x0F) << 4) | (IDE_BUILD_INFO[19] & 0x0F);
+  70   1      }
+  71          
+  72          void Build_Info_Print(void)
+  73          {
+  74   1              
+  75   1              u8 i;
+  76   1              u8 Buff[4];
+  77   1      
+  78   1              BUILD_UART_PRINT('B'); 
+  79   1              BUILD_UART_PRINT('u'); 
+  80   1              BUILD_UART_PRINT('i'); 
+  81   1              BUILD_UART_PRINT('l'); 
+  82   1              BUILD_UART_PRINT('d'); 
+  83   1              BUILD_UART_PRINT(':'); 
+  84   1              BUILD_UART_PRINT(' '); 
+  85   1          
+  86   1              Build_Date_Get(Buff);
+  87   1      
+  88   1              for(i=0;i<4;i++)
+  89   1              {
+  90   2                              BUILD_UART_PRINT((Buff[i] >> 4) + 0x30);
+  91   2                              BUILD_UART_PRINT((Buff[i] & 0x0f) + 0x30);
+  92   2              }
+  93   1      
+  94   1              BUILD_UART_PRINT(' ');         //空格
+  95   1      
+  96   1              Build_Time_Get(Buff);
+  97   1              for(i=0;i<3;i++)
+  98   1              {
+  99   2                              BUILD_UART_PRINT((Buff[i] >> 4) + 0x30);
+ 100   2                              BUILD_UART_PRINT((Buff[i] & 0x0f) + 0x30);
+ 101   2                              
+ 102   2                              if(i == 0 || i == 1)
+ 103   2                              {
+ 104   3                                              BUILD_UART_PRINT(':');
+ 105   3                              }
+ 106   2              }
+ 107   1              
+ 108   1              BUILD_UART_PRINT('\r'); 
+ 109   1              BUILD_UART_PRINT('\n'); 
+ 110   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    468    ----
+C51 COMPILER V9.52.0.0   IDE_BUILD_INFO                                                    12/10/2019 23:00:01 PAGE 3   
+
+   CONSTANT SIZE    =     93    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

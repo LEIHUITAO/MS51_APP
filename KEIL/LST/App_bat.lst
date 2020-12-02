@@ -1,0 +1,69 @@
+C51 COMPILER V9.52.0.0   APP_BAT                                                           03/12/2020 13:58:50 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_BAT
+OBJECT MODULE PLACED IN .\Output\App_bat.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_bat.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
+                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_bat.lst) OBJECT(.\Output\App
+                    -_bat.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "Sys_Adc.h"
+   3          #include "App_bat.h"
+   4          #include "App_Led.h"
+   5          
+   6          //
+   7          static xdata u16 uwAdc_bat_data;
+   8          
+   9          void App_bat_Init(void)
+  10          {       
+  11   1              uwAdc_bat_data = 0;
+  12   1      }
+  13          
+  14          u8 App_bat_get(void)
+  15          {       
+  16   1              return uwAdc_bat_data;
+  17   1      }
+  18          
+  19          void App_bat_server(void)
+  20          {
+  21   1          static xdata u16 uwTime = 0;
+  22   1          static xdata u16 uwAdc_add = 0;
+  23   1          static xdata u8 ucAdc_cnt = 0;
+  24   1          u16 uwAdc_tmp;
+  25   1      
+  26   1          if(uwTime >= 1000)
+  27   1          {
+  28   2              uwTime = 0;
+  29   2              
+  30   2                  uwAdc_tmp = Adc_Data_Get(0);
+  31   2      
+  32   2              uwAdc_add += uwAdc_tmp;
+  33   2              ucAdc_cnt++;
+  34   2              if(ucAdc_cnt >= 16)
+  35   2              {
+  36   3                  ucAdc_cnt = 0;
+  37   3      
+  38   3                  uwAdc_bat_data = uwAdc_add/16;
+  39   3                  uwAdc_add = 0;
+  40   3              }
+  41   2          }
+  42   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     97    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      7    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.52.0.0   APP_BAT                                                           03/12/2020 13:58:50 PAGE 2   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

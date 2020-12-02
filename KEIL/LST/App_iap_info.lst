@@ -1,0 +1,144 @@
+C51 COMPILER V9.00   APP_IAP_INFO                                                          11/04/2020 15:29:23 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE APP_IAP_INFO
+OBJECT MODULE PLACED IN .\Output\App_iap_info.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_iap_info.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Ma
+                    -in;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_iap_info.lst) TABS(2) O
+                    -BJECT(.\Output\App_iap_info.obj)
+
+line level    source
+
+   1          #include "includes.h"
+   2          #include "App_iap_info.h"
+   3          #include "Sys_Init.h"
+   4          
+   5          #define DEF_IAP_INFO_ADDR   ((3*1024)-128)
+   6          
+   7          static void Trigger_IAP(void);
+   8          
+   9          static void iap_iapa_inc(void)
+  10          {
+  11   1          IAPAL++;
+  12   1          if(IAPAL == 0)
+  13   1          {
+  14   2              IAPAH++;
+  15   2          }
+  16   1      }
+  17          
+  18          void iap_flag_read(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned char size)
+  19          {   
+  20   1        unsigned char i;
+  21   1          
+  22   1          set_CHPCON_IAPEN;
+  23   1          IAPAL = LOBYTE(u16IAPStartAddress);
+  24   1          IAPAH = HIBYTE(u16IAPStartAddress);
+  25   1          IAPCN = BYTE_READ_LDROM;
+  26   1         for(i=0;i<size;i++)
+  27   1         {
+  28   2              IAPFD = 0x00;    
+  29   2              Trigger_IAP();
+  30   2             
+  31   2          *(buf+i) = IAPFD;
+  32   2      
+  33   2              iap_iapa_inc();
+  34   2         }
+  35   1      
+  36   1          clr_CHPCON_IAPEN;
+  37   1      }
+  38          
+  39          void iap_flag_write(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned char size)
+  40          {   
+  41   1        unsigned char i;
+  42   1        
+  43   1          set_CHPCON_IAPEN;
+  44   1          set_IAPUEN_LDUEN;    
+  45   1          IAPAL = LOBYTE(u16IAPStartAddress);
+  46   1          IAPAH = HIBYTE(u16IAPStartAddress);
+  47   1          IAPCN = BYTE_PROGRAM_LDROM;
+  48   1          
+  49   1        //
+  50   1        for(i=0;i<size;i++)
+  51   1        {
+  52   2          IAPFD = *(buf+i);     
+  53   2          Trigger_IAP();
+C51 COMPILER V9.00   APP_IAP_INFO                                                          11/04/2020 15:29:23 PAGE 2   
+
+  54   2              
+  55   2              iap_iapa_inc();
+  56   2        }
+  57   1      
+  58   1          clr_IAPUEN_LDUEN;
+  59   1          clr_CHPCON_IAPEN;
+  60   1      }
+  61          
+  62          void iap_flag_erase(unsigned int u16IAPStartAddress)
+  63          {   
+  64   1          set_CHPCON_IAPEN;                    // Enable IAP function
+  65   1          set_IAPUEN_LDUEN;                    //  LDROM modify Enable
+  66   1          IAPFD = 0xFF;                        // IMPORTANT !! To erase function must setting IAPFD = 0xFF 
+  67   1          IAPCN = PAGE_ERASE_LDROM;
+  68   1        
+  69   1          IAPAL = LOBYTE(u16IAPStartAddress);
+  70   1          IAPAH = HIBYTE(u16IAPStartAddress);
+  71   1          Trigger_IAP(); 
+  72   1      
+  73   1          clr_IAPUEN_LDUEN;                    // Disable LDROM modify 
+  74   1          clr_CHPCON_IAPEN;                    // Disable IAP
+  75   1      }
+  76          
+  77          static void Trigger_IAP(void)
+  78          {   
+  79   1          set_IAPTRG_IAPGO;                            //trigger IAP
+  80   1          if((CHPCON|CLR_BIT6)==1)                     // if fail flag is set, toggle error LED and IAP stop
+  81   1          {
+  82   2            clr_CHPCON_IAPFF;
+  83   2          }
+  84   1      }
+  85          
+  86          void iap_info_read(unsigned int * puwRom_var, unsigned int * puwRom_crc)
+  87          {
+  88   1          xdata u8 TMP[5];
+  89   1          iap_flag_read(DEF_IAP_INFO_ADDR,TMP,sizeof(TMP));
+  90   1      
+  91   1          * puwRom_var = TMP[1] << 8 | TMP[2];
+  92   1          * puwRom_crc = TMP[3] << 8 | TMP[4];
+  93   1      }
+  94          
+  95          void iap_info_write(void)
+  96          {
+  97   1          xdata u8 TMP[5];
+  98   1           
+  99   1          TMP[0] = 1;                 //完成则清除0xff
+ 100   1          TMP[1] = 0;
+ 101   1          TMP[2] = 0;
+ 102   1          TMP[3] = 0;
+ 103   1          TMP[4] = 0;
+ 104   1          iap_flag_erase(DEF_IAP_INFO_ADDR);
+ 105   1          iap_flag_write(DEF_IAP_INFO_ADDR,TMP,sizeof(TMP));
+ 106   1      
+ 107   1      #if 1                           //仿真时请屏蔽
+ 108   1          
+ 109   1          //reset ldrom
+ 110   1          TA = 0xAA;
+ 111   1          TA = 0x55;
+ 112   1          CHPCON = 0x82;                   //software reset enable，set boot from ldrom
+ 113   1          while(1);
+ 114   1      #endif
+ 115   1      }
+C51 COMPILER V9.00   APP_IAP_INFO                                                          11/04/2020 15:29:23 PAGE 3   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    483    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

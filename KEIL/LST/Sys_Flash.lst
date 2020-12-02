@@ -1,0 +1,530 @@
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE SYS_FLASH
+OBJECT MODULE PLACED IN .\Output\Sys_Flash.obj
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Sys_Flash.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;
+                    -..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Flash.lst) OBJECT(.\Output
+                    -\Sys_Flash.obj)
+
+line level    source
+
+   1          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   2          /*                                                                                                        
+             - */
+   3          /* Copyright(c) 2018 Nuvoton Technology Corp. All rights reserved.                                        
+             - */
+   4          /*                                                                                                        
+             - */
+   5          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   6          
+   7          /*********************************************************************************************************
+             -***
+   8            Website: http://www.nuvoton.com
+   9            E-Mail : MicroC-8bit@nuvoton.com
+  10          **********************************************************************************************************
+             -**/
+  11          
+  12          #include "includes.h"
+  13          
+  14          #if 0
+              unsigned char xdata DIDBuffer[4];
+              unsigned char xdata UIDBuffer[12];
+              unsigned char xdata UCIDBuffer[12];
+              unsigned char xdata IAPCFBuf[5];
+              
+              void IAP_ERROR(void)
+              {
+                
+              }
+              
+              /**
+               * @brief       Erase LDROM  
+               * @param       u16IAPStartAddress define LDROM area start address
+               * @param       u16IAPDataSize define LDROM need be erase bytes size
+               * @return      none
+               * @details     Page erase LDROM area base on data start address 
+               * @example      Erase_LDROM(0x0000,2048);
+               */
+              void Erase_LDROM(unsigned int u16IAPStartAddress,unsigned int u16IAPDataSize)
+              {   
+                  unsigned int u16Count;
+              
+                  set_CHPCON_IAPEN;                    // Enable IAP function
+                  set_IAPUEN_LDUEN;                    //  LDROM modify Enable
+                  IAPFD = 0xFF;                        // IMPORTANT !! To erase function must setting IAPFD = 0xFF 
+                  IAPCN = PAGE_ERASE_LDROM;
+                  for(u16Count=0x0000;u16Count<(u16IAPDataSize/PAGE_SIZE);u16Count++)            // Loop page erase LDRO
+             -M special define address area.
+                  {        
+                      IAPAL = LOBYTE(u16Count*PAGE_SIZE + u16IAPStartAddress);
+                      IAPAH = HIBYTE(u16Count*PAGE_SIZE + u16IAPStartAddress);
+                      Trigger_IAP(); 
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 2   
+
+                  } 
+                  clr_IAPUEN_LDUEN;                    // Disable LDROM modify 
+                  clr_CHPCON_IAPEN;                    // Disable IAP
+              }
+              
+              /**
+               * @brief       LDROM blank check
+               * @param       u16IAPStartAddress define LDROM area start address
+               * @param       u16IAPDataSize define LDROM need be erase bytes size
+               * @return      none
+               * @details     Check each byte of LDROM is FFH or not.
+               * @example      LDROM_BlanckCheck(0x0000,2048);
+               */
+              char Erase_Verify_LDROM(unsigned int u16IAPStartAddress, unsigned int u16IAPDataSize)
+              {   
+                  unsigned int u16Count;
+                  char ret = 1;
+                  
+                  set_CHPCON_IAPEN;
+                  IAPAL = LOBYTE(u16IAPStartAddress);
+                  IAPAH = HIBYTE(u16IAPStartAddress);
+                  IAPCN = BYTE_READ_LDROM;
+              
+                  for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+                  {   
+                      IAPFD = 0x00;    
+                      Trigger_IAP();
+                      if(IAPFD != 0xFF)
+                      {
+                          ret = 0;
+                          break;
+                      }
+                      IAPAL++;
+                      if(IAPAL == 0x00)
+                        IAPAH++;
+                  } 
+                  clr_CHPCON_IAPEN;
+              
+                  return ret;
+              }
+              
+              /**
+               * @brief       LDROM program loop
+               * @param       u16IAPStartAddress define LDROM area start address
+               * @param       u16IAPDataSize define LDROM need be erase bytes size
+               * @return      none
+               * @details     Copy IAPDataBuf to LDROM
+               * @example      LDROM_Program(0x0000,1024);
+               */
+              void Program_LDROM(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned int u16IAPDataSize)
+              {   
+                  unsigned int u16Count;
+              
+                  set_CHPCON_IAPEN;
+                  set_IAPUEN_LDUEN;    
+                  IAPAL = LOBYTE(u16IAPStartAddress);
+                  IAPAH = HIBYTE(u16IAPStartAddress);
+                  IAPCN = BYTE_PROGRAM_LDROM;
+                  
+                  for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+                  {   
+                      IAPFD = *(buf+u16Count);     
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 3   
+
+                      Trigger_IAP();
+                      IAPAL++;
+                      if(IAPAL == 0)
+                      {
+                          IAPAH++;
+                      }
+                  } 
+                  clr_IAPUEN_LDUEN;
+                  clr_CHPCON_IAPEN;
+              }
+              
+              
+              /**
+               * @brief       LDROM check loop
+               * @param       u16IAPStartAddress define LDROM area start address
+               * @param       u16IAPDataSize define LDROM need be erase bytes size
+               * @return      none
+               * @details     Check with XRAM IAPDataBuf with LDROM
+               * @example      LDROM_Program_Verify(0x0000,1024);
+               */
+              void Read_LDROM(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned int u16IAPDataSize)
+              {   
+                  unsigned int u16Count;
+              
+                  set_CHPCON_IAPEN;
+                  IAPAL = LOBYTE(u16IAPStartAddress);
+                  IAPAH = HIBYTE(u16IAPStartAddress);
+                  IAPCN = BYTE_READ_LDROM;
+                  for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+                  {   
+                      IAPFD = 0x00;
+                      Trigger_IAP();
+                      *(buf+u16Count) = IAPFD;    
+                      IAPAL++;
+                      if(IAPAL == 0)
+                      {
+                          IAPAH++;
+                      }
+                  } 
+                  clr_CHPCON_IAPEN;
+              }
+              
+              
+              /**
+               * @brief       Modify CONFIG  
+               * @param       u8CF0,u8CF1,u8CF2,u8CF3,u8CF4,
+               * @return      none
+               * @details     Since CONFIG whole area include in 1 page, save old config define in xram, erase config an
+             -d program as param define, if fail load saved config and program to recover.    
+               * @example      Erase_CONFIG();
+               */
+              void Modify_CONFIG(unsigned char u8CF0,unsigned char u8CF1,unsigned char u8CF2,unsigned char u8CF3,unsigne
+             -d char u8CF4)
+              {   
+                  unsigned char u8Count;
+                
+              /* Loop save original CONFIG data in XRAM  */
+                  set_CHPCON_IAPEN;                    // Enable IAP function
+                  IAPCN = BYTE_READ_CONFIG;            
+                  IAPAH = 0x00;
+                  for(u8Count=0;u8Count<5;u8Count++)  
+                  {        
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 4   
+
+                      IAPAL = u8Count;
+                      Trigger_IAP(); 
+                      IAPCFBuf[u8Count] = IAPFD;
+                  } 
+              /* Erase CONFIG setting    */
+                  set_IAPUEN_CFUEN;                    // APROM modify Enable
+                  IAPFD = 0xFF;                        // IMPORTANT !! To erase function must setting IAPFD = 0xFF 
+                  IAPCN = PAGE_ERASE_CONFIG;
+                  IAPAL = 0x00;
+                  Trigger_IAP();
+              /* Modify CONFIG setting as customer define */
+                  IAPCN = BYTE_PROGRAM_CONFIG;
+                  IAPFD = u8CF0;
+                  Trigger_IAP();
+                  IAPAL++;
+                  IAPFD = u8CF1;
+                  Trigger_IAP();
+                  IAPAL++;
+                  IAPFD = u8CF2;
+                  Trigger_IAP();
+                  IAPAL++;
+                  IAPFD = u8CF3;
+                  Trigger_IAP();
+                  IAPAL++;
+                  IAPFD = u8CF4;
+                  Trigger_IAP();
+                  clr_IAPUEN_CFUEN;
+              /* Check programed data, if not match, program the storaged before data.  */
+                  IAPCN = BYTE_READ_CONFIG;
+                  IAPAL = 0x00;
+                  Trigger_IAP(); 
+                  if (IAPFD != u8CF0)
+                    goto MDCFEND;
+                  IAPAL++;
+                  Trigger_IAP(); 
+                  if (IAPFD != u8CF1)
+                    goto MDCFEND;
+                  IAPAL++;
+                  Trigger_IAP(); 
+                  if (IAPFD != u8CF2)
+                    goto MDCFEND;
+                  IAPAL++;
+                  Trigger_IAP(); 
+                  if (IAPFD != u8CF3)
+                    goto MDCFEND;
+                  IAPAL++;
+                  Trigger_IAP(); 
+                  if (IAPFD != u8CF4)
+                    goto MDCFEND;
+                  goto CFCLOSE;
+              MDCFEND:
+                  set_IAPUEN_CFUEN;                      // APROM modify Enable
+                  for(u8Count=0;u8Count<5;u8Count++)    // Loop page erase APROM special define address area.
+                  {        
+                      IAPAL = u8Count;
+                      IAPFD = IAPCFBuf[u8Count];
+                      Trigger_IAP(); 
+                  } 
+              CFCLOSE:
+                  clr_IAPUEN_CFUEN;                    // Disable APROM modify 
+                  clr_CHPCON_IAPEN;                    // Disable IAP
+                  
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 5   
+
+              
+              }
+              
+              /**
+               * @brief       Read UID loop
+               * @param       none
+               * @return      none
+               * @details     IAP command read UID area storage data in XRAM LIB_UIDBuffer[0:8]
+               * @example      UID_Read();
+              */
+              void Read_UID(void)
+              {   
+                  unsigned char u8Count;
+              
+                  set_CHPCON_IAPEN;
+                  IAPAL = 0x00;
+                  IAPAH = 0x00;
+                  IAPCN = READ_UID;
+                  for(u8Count=0;u8Count<12;u8Count++)
+                  {   
+                      IAPFD = 0x00;
+                      Trigger_IAP();
+                      UIDBuffer[u8Count] = IAPFD ;
+                      IAPAL++;
+                  } 
+                  clr_CHPCON_IAPEN;
+              }
+              
+              
+              /**
+               * @brief       Read UCID loop
+               * @param       none
+               * @return      none
+               * @details     IAP command read UCID area storage data in XRAM UCIDBuffer[0:8]
+               * @example      UCID_Read();
+               */
+              void Read_UCID(void)
+              {   
+                  unsigned char u8Count;
+              
+                  set_CHPCON_IAPEN;
+                  IAPAL = 0x20;
+                  IAPAH = 0x00;
+                  IAPCN = READ_UID;
+                  for(u8Count=0;u8Count<12;u8Count++)
+                  {   
+                      IAPFD = 0x00;
+                      Trigger_IAP();
+                      UCIDBuffer[u8Count] = IAPFD ;
+                      IAPAL++;
+                  } 
+                  clr_CHPCON_IAPEN;
+              }
+              
+              /**
+               * @brief       Read UID loop
+               * @param       none
+               * @return      none
+               * @details     IAP command read UID area storage data in XRAM LIB_UIDBuffer[0:8]
+               * @example      UID_Read();
+              */
+              void Read_DID(void)
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 6   
+
+              {   
+                  unsigned char u8Count;
+              
+                  set_CHPCON_IAPEN;
+                  IAPAL = 0x00;
+                  IAPAH = 0x00;
+                  IAPCN = READ_DID;
+                  for(u8Count=0;u8Count<4;u8Count++)
+                  {   
+                      IAPFD = 0x00;
+                      Trigger_IAP();
+                      DIDBuffer[u8Count] = IAPFD ;
+                      IAPAL++;
+                  } 
+                  clr_CHPCON_IAPEN;
+              }
+              #endif
+ 309          
+ 310          /**
+ 311           * @brief       Trig IAP and check status flag  
+ 312           * @param       None
+ 313           * @return      none
+ 314           * @details     Trig IAPGO, check IAP Status flag if error set IAP disable all.
+ 315           */
+ 316          void Trigger_IAP(void)
+ 317          {   
+ 318   1          set_IAPTRG_IAPGO;                            //trigger IAP
+ 319   1          if((CHPCON|CLR_BIT6)==1)                     // if fail flag is set, toggle error LED and IAP stop
+ 320   1          {
+ 321   2            clr_CHPCON_IAPFF;
+ 322   2          }
+ 323   1      }
+ 324          
+ 325          /**
+ 326           * @brief       Erase APROM  
+ 327           * @param       u16IAPStartAddress define APROM area start address
+ 328           * @param       u16IAPDataSize define LDROM need be erase bytes size
+ 329           * @return      none
+ 330           * @details     Page erase APROM area base on data start address 
+ 331           * @example      Erase_APROM(0x0000,2048);
+ 332           */
+ 333          void APROM_Erase(unsigned int u16IAPStartAddress, unsigned int u16IAPDataSize)
+ 334          {   
+ 335   1          unsigned int u16Count;
+ 336   1      
+ 337   1          set_CHPCON_IAPEN;                    // Enable IAP function
+ 338   1          set_IAPUEN_APUEN;                    // APROM modify Enable
+ 339   1          IAPFD = 0xFF;                        // IMPORTANT !! To erase function must setting IAPFD = 0xFF 
+ 340   1          IAPCN = PAGE_ERASE_APROM;
+ 341   1          for(u16Count=0x0000;u16Count<=(u16IAPDataSize/PAGE_SIZE);u16Count++)            // Loop page erase APR
+             -OM special define address area.
+ 342   1          {        
+ 343   2              IAPAL = LOBYTE(u16Count*PAGE_SIZE + u16IAPStartAddress);
+ 344   2              IAPAH = HIBYTE(u16Count*PAGE_SIZE + u16IAPStartAddress);
+ 345   2              Trigger_IAP(); 
+ 346   2          } 
+ 347   1          clr_IAPUEN_APUEN;                    // Disable APROM modify 
+ 348   1          clr_CHPCON_IAPEN;                    // Disable IAP
+ 349   1      }
+ 350          
+ 351          /**
+ 352           * @brief       APROM blank check
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 7   
+
+ 353           * @param       u16IAPStartAddress define APROM area start address
+ 354           * @param       u16IAPDataSize define APROM need be erase bytes size
+ 355           * @return      none
+ 356           * @details     Check each byte of APPROM is FFH or not.
+ 357           * @example      APROM_Blank_Check(0x0000,2048);
+ 358           */
+ 359          char APROM_Blank_Check(unsigned int u16IAPStartAddress, unsigned int u16IAPDataSize)
+ 360          {   
+ 361   1          unsigned int u16Count;
+ 362   1          char ret = 1;
+ 363   1        
+ 364   1          set_CHPCON_IAPEN;
+ 365   1          IAPAL = LOBYTE(u16IAPStartAddress);
+ 366   1          IAPAH = HIBYTE(u16IAPStartAddress);
+ 367   1          IAPCN = BYTE_READ_APROM;
+ 368   1          for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+ 369   1          {   
+ 370   2              //IAPFD = 0x00;    
+ 371   2              Trigger_IAP();
+ 372   2              
+ 373   2              IAPAL++;
+ 374   2              if(IAPAL == 0x00)
+ 375   2              {
+ 376   3                IAPAH++;
+ 377   3              }
+ 378   2      
+ 379   2              if(IAPFD != 0xFF)
+ 380   2              {
+ 381   3                  ret = 0;
+ 382   3                  break;
+ 383   3              }
+ 384   2          } 
+ 385   1          clr_CHPCON_IAPEN;
+ 386   1          return ret;
+ 387   1      }
+ 388          
+ 389          /**
+ 390           * @brief       APROM program loop
+ 391           * @param       u16IAPStartAddress define APROM area start address
+ 392           * @param       u16IAPDataSize define APROM need be erase bytes size
+ 393           * @return      none
+ 394           * @details     Copy APDataBuf to APROM
+ 395           * @example      APROM_Program(0x0000,1024);
+ 396           */
+ 397          void APROM_Program(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned int u16IAPDataSize)
+ 398          {   
+ 399   1          unsigned int u16Count;
+ 400   1      
+ 401   1          set_CHPCON_IAPEN;
+ 402   1          set_IAPUEN_APUEN;    
+ 403   1          IAPAL = LOBYTE(u16IAPStartAddress);
+ 404   1          IAPAH = HIBYTE(u16IAPStartAddress);
+ 405   1          IAPCN = BYTE_PROGRAM_APROM;
+ 406   1          for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+ 407   1          {   
+ 408   2              IAPFD=*(buf+u16Count);     
+ 409   2              Trigger_IAP();
+ 410   2              IAPAL++;
+ 411   2              if(IAPAL == 0)
+ 412   2              {
+ 413   3                  IAPAH++;
+ 414   3              }
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 8   
+
+ 415   2          } 
+ 416   1          clr_IAPUEN_APUEN;
+ 417   1          clr_CHPCON_IAPEN;
+ 418   1      }
+ 419          
+ 420          
+ 421          /**
+ 422           * @brief       APROM check loop
+ 423           * @param       u16IAPStartAddress define APROM area start address
+ 424           * @param       u16IAPDataSize define APROM need be erase bytes size
+ 425           * @return      none
+ 426           * @details     Check with XRAM IAPDataBuf with APROM
+ 427           * @example      APROM_Program_Verify(0x0000,1024);
+ 428           */
+ 429          void APROM_Read(unsigned int u16IAPStartAddress, unsigned char * buf, unsigned int u16IAPDataSize)
+ 430          {   
+ 431   1          unsigned int u16Count;
+ 432   1      
+ 433   1          set_CHPCON_IAPEN;
+ 434   1          IAPAL = LOBYTE(u16IAPStartAddress);
+ 435   1          IAPAH = HIBYTE(u16IAPStartAddress);
+ 436   1          IAPCN = BYTE_READ_APROM;
+ 437   1          for(u16Count=0;u16Count<u16IAPDataSize;u16Count++)
+ 438   1          {   
+ 439   2              IAPFD = 0x00;
+ 440   2              Trigger_IAP();
+ 441   2              *(buf+u16Count) = IAPFD;
+ 442   2              IAPAL++;
+ 443   2              if(IAPAL == 0)
+ 444   2              {
+ 445   3                  IAPAH++;
+ 446   3              }
+ 447   2          } 
+ 448   1          clr_CHPCON_IAPEN;
+ 449   1      }
+ 450          
+ 451          void APROM_Demo(void)
+ 452          {
+ 453   1          u8 i;
+ 454   1          u8 xdata TMP[64];
+ 455   1          
+ 456   1          APROM_Erase(0x3000,sizeof(TMP));
+ 457   1          if(1 == APROM_Blank_Check(0x3000,sizeof(TMP)))
+ 458   1              printf("APROM_Blank_Check ok \r\n");
+ 459   1          else
+ 460   1              printf("APROM_Blank_Check err \r\n");
+ 461   1      
+ 462   1          for(i=0;i<sizeof(TMP);i++)
+ 463   1          {
+ 464   2              TMP[i] = i;
+ 465   2          }
+ 466   1          APROM_Program(0x3000,TMP,sizeof(TMP));
+ 467   1          for(i=0;i<sizeof(TMP);i++)
+ 468   1          {
+ 469   2              TMP[i] = 0;
+ 470   2          }
+ 471   1          APROM_Read(0x3000,TMP,sizeof(TMP));
+ 472   1          printf("TMP[x] = ");
+ 473   1          for(i=0;i<sizeof(TMP);i++)
+ 474   1          {
+ 475   2              printf("%X ",TMP[i]);
+ 476   2          }
+C51 COMPILER V9.52.0.0   SYS_FLASH                                                         03/17/2020 16:49:10 PAGE 9   
+
+ 477   1          printf("\r\n");
+ 478   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    704    ----
+   CONSTANT SIZE    =     66    ----
+   XDATA SIZE       =   ----      64
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      19
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

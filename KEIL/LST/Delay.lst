@@ -1,0 +1,54 @@
+C51 COMPILER V9.00   DELAY                                                                 11/04/2020 15:29:23 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DELAY
+NO OBJECT MODULE REQUESTED
+COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Delay.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\L
+                    -ibrary\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS(2) SRC(.\Output\De
+                    -lay.SRC)
+
+line level    source
+
+   1          #include "types.h"
+   2          
+   3          //1T,主频16M时有效
+   4          void Delay_US(u16 uwTime)
+   5          {
+   6   1          uwTime = uwTime;
+   7   1          
+   8   1          #pragma asm 
+   9   1          INC R6;
+  10   1          
+  11   1      LOOP:    
+  12   1          MOV R5,#2;
+  13   1          nop;
+  14   1          nop;
+  15   1          DJNZ R5,$;
+  16   1          DJNZ R7,LOOP;
+  17   1          
+  18   1          DJNZ R6,LOOP;
+  19   1          #pragma endasm
+  20   1      }
+  21          
+  22          void Delay_MS(u16 uwTime)
+  23          {
+  24   1          u16 i;
+  25   1          for(i=0;i<uwTime;i++)
+  26   1          {
+  27   2              Delay_US(1000);
+  28   2          }
+  29   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     69    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,145 @@
+A51 MACRO ASSEMBLER  DELAY                                                                11/04/2020 15:29:23 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\Output\Delay.OBJ
+ASSEMBLER INVOKED BY: C:\Keil_MDK\C51\BIN\A51.EXE .\Output\Delay.src PR(.\LST\Delay.ls1) EP DEBUG
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; .\Output\Delay.SRC generated from: ..\Main\Delay.c
+                       2     ; COMPILER INVOKED BY:
+                       3     ;        C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Delay.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Lib
+                             rary;..\Main;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND 
+                             PRINT(.\LST\Delay.lst) TABS(2) SRC(.\Output\Delay.SRC)
+                       4     
+                       5     
+                       6     NAME    DELAY
+                       7     
+                       8     ?PR?_Delay_US?DELAY  SEGMENT CODE 
+                       9     ?PR?_Delay_MS?DELAY  SEGMENT CODE 
+                      10     ?DT?_Delay_MS?DELAY  SEGMENT DATA OVERLAYABLE 
+                      11             PUBLIC  _Delay_MS
+                      12             PUBLIC  _Delay_US
+                      13     
+----                  14             RSEG  ?DT?_Delay_MS?DELAY
+0000                  15     ?_Delay_MS?BYTE:
+0000                  16          uwTime?141:   DS   2
+0002                  17             ORG  2
+0002                  18               i?142:   DS   2
+                      19     ; #include "types.h"
+                      20     ; 
+                      21     ; //1T,主频16M时有效
+                      22     ; void Delay_US(u16 uwTime)
+                      23     
+----                  24             RSEG  ?PR?_Delay_US?DELAY
+0000                  25     _Delay_US:
+                      26             USING   0
+                      27                             ; SOURCE LINE # 4
+                      28     ;---- Variable 'uwTime?040' assigned to Register 'R6/R7' ----
+                      29     ; {
+                      30                             ; SOURCE LINE # 5
+                      31     ;     uwTime = uwTime;
+                      32                             ; SOURCE LINE # 6
+                      33     ;     
+                      34     ;     #pragma asm 
+                      35     ;     INC R6;
+0000 0E               36               INC R6;
+                      37     ;     
+                      38               
+                      39     ; LOOP:    
+0001                  40               LOOP:    
+                      41     ;     MOV R5,#2;
+0001 7D02             42               MOV R5,#2;
+                      43     ;     nop;
+0003 00               44               nop;
+                      45     ;     nop;
+0004 00               46               nop;
+                      47     ;     DJNZ R5,$;
+0005 DDFE             48               DJNZ R5,$;
+                      49     ;     DJNZ R7,LOOP;
+0007 DFF8             50               DJNZ R7,LOOP;
+                      51     ;     
+                      52               
+                      53     ;     DJNZ R6,LOOP;
+0009 DEF6             54               DJNZ R6,LOOP;
+                      55     ;     #pragma endasm
+                      56     ; }
+A51 MACRO ASSEMBLER  DELAY                                                                11/04/2020 15:29:23 PAGE     2
+
+                      57                             ; SOURCE LINE # 20
+000B 22               58             RET     
+                      59     ; END OF _Delay_US
+                      60     
+                      61     ; 
+                      62     ; void Delay_MS(u16 uwTime)
+                      63     
+----                  64             RSEG  ?PR?_Delay_MS?DELAY
+0000                  65     _Delay_MS:
+                      66             USING   0
+                      67                             ; SOURCE LINE # 22
+0000 8E00     F       68             MOV     uwTime?141,R6
+0002 8F00     F       69             MOV     uwTime?141+01H,R7
+                      70     ; {
+                      71                             ; SOURCE LINE # 23
+                      72     ;     u16 i;
+                      73     ;     for(i=0;i<uwTime;i++)
+                      74                             ; SOURCE LINE # 25
+0004 E4               75             CLR     A
+0005 F500     F       76             MOV     i?142,A
+0007 F500     F       77             MOV     i?142+01H,A
+0009                  78     ?C0002:
+0009 C3               79             CLR     C
+000A E500     F       80             MOV     A,i?142+01H
+000C 9500     F       81             SUBB    A,uwTime?141+01H
+000E E500     F       82             MOV     A,i?142
+0010 9500     F       83             SUBB    A,uwTime?141
+0012 5011             84             JNC     ?C0005
+                      85     ;     {
+                      86                             ; SOURCE LINE # 26
+                      87     ;         Delay_US(1000);
+                      88                             ; SOURCE LINE # 27
+0014 7FE8             89             MOV     R7,#0E8H
+0016 7E03             90             MOV     R6,#03H
+0018 120000   F       91             LCALL   _Delay_US
+                      92     ;     }
+                      93                             ; SOURCE LINE # 28
+001B 0500     F       94             INC     i?142+01H
+001D E500     F       95             MOV     A,i?142+01H
+001F 70E8             96             JNZ     ?C0002
+0021 0500     F       97             INC     i?142
+0023                  98     ?C0006:
+0023 80E4             99             SJMP    ?C0002
+                     100     ; }                     ; SOURCE LINE # 29
+0025                 101     ?C0005:
+0025 22              102             RET     
+                     103     ; END OF _Delay_MS
+                     104     
+                     105             END
+A51 MACRO ASSEMBLER  DELAY                                                                11/04/2020 15:29:23 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E              T Y P E  V A L U E   ATTRIBUTES
+
+?C0002. . . . . . .  C ADDR   0009H   R   SEG=?PR?_DELAY_MS?DELAY
+?C0005. . . . . . .  C ADDR   0025H   R   SEG=?PR?_DELAY_MS?DELAY
+?C0006. . . . . . .  C ADDR   0023H   R   SEG=?PR?_DELAY_MS?DELAY
+?DT?_DELAY_MS?DELAY  D SEG    0004H       REL=UNIT
+?PR?_DELAY_MS?DELAY  C SEG    0026H       REL=UNIT
+?PR?_DELAY_US?DELAY  C SEG    000CH       REL=UNIT
+?_DELAY_MS?BYTE . .  D ADDR   0000H   R   SEG=?DT?_DELAY_MS?DELAY
+DELAY . . . . . . .  N NUMB   -----       
+I?142 . . . . . . .  D ADDR   0002H   R   SEG=?DT?_DELAY_MS?DELAY
+LOOP. . . . . . . .  C ADDR   0001H   R   SEG=?PR?_DELAY_US?DELAY
+UWTIME?141. . . . .  D ADDR   0000H   R   SEG=?DT?_DELAY_MS?DELAY
+_DELAY_MS . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY_MS?DELAY
+_DELAY_US . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY_US?DELAY
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
