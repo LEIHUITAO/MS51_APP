@@ -1,1 +1,1 @@
-"..\Main\Delay.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\Library\Device\Include;..\Main\0AC) DEFINE (FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS (2) SRC (.\Output\Delay.SRC)
+"..\Main\Delay.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\Library\Device\Include;..\Main\0AC;..\Main) DEFINE (FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS (2) SRC (.\Output\Delay.SRC)

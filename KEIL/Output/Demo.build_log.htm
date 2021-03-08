@@ -3,26 +3,26 @@
 <pre>
 <h1>µVision Build Log</h1>
 <h2>Tool Versions:</h2>
-IDE-Version: ¦ÌVision V5.21.1.0
-Copyright (C) 2016 ARM Ltd and ARM Germany GmbH. All rights reserved.
-License Information: qq qq, qq, LIC=8V0AE-527NU-6DUKF-6NHYV-FH8E7-C88R7
+IDE-Version: ¦ÌVision V5.27.1.0
+Copyright (C) 2019 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: leihuitao leihuitao, leihuitao, LIC=ZBD7S-LUZNJ-NY4V5-G50DK-0TQ57-5E3RX
  
 Tool Versions:
-Toolchain:       PK51 Prof. Developers Kit  Version: 9.00
-Toolchain Path:  C:\Keil_MDK\C51\BIN
-C Compiler:      C51.exe V9.00
-Assembler:       A51.exe V8.01
-Linker/Locator:  BL51.exe V6.22
-Library Manager: LIB51.exe V4.24
-Hex Converter:   OH51.exe V2.6
-CPU DLL:         S8051.DLL V3.72
-Dialog DLL:      DP51.DLL V2.59
+Toolchain:       PK51 Prof. Developers Kit  Version: 9.60.0.0
+Toolchain Path:  C:\Keil_v5\C51\BIN
+C Compiler:      C51.exe V9.60.0.0
+Assembler:       A51.exe V8.2.7.0
+Linker/Locator:  BL51.exe V6.22.2.0
+Library Manager: LIB51.exe V4.30.1.0
+Hex Converter:   OH51.exe V2.7.0.0
+CPU DLL:         S8051.DLL V3.122.0.0
+Dialog DLL:      DP51.DLL V2.67.0.0
 Target DLL:      Nuvoton_8051_Keil_uVision_Driver.dll V3.02
-Dialog DLL:      TP51.DLL V2.58
+Dialog DLL:      TP51.DLL V2.60.0.0
  
 <h2>Project:</h2>
-E:\01_PRJ_MCU\ASPNT008\02_MCU\MS51_APP\KEIL\Demo.uvproj
-Project File Date:  10/22/2020
+E:\01_PRJ_MCU\ASPNT005\02_MCU\MS51_APP\KEIL\Demo.uvproj
+Project File Date:  02/02/2021
 
 <h2>Output:</h2>
 Rebuild target 'Demo'
@@ -34,27 +34,24 @@ compiling Sys_Uart0_IRQ.c...
 compiling App_BT_Uart0.c...
 compiling App_Key.c...
 compiling App_Charge_bat.c...
+compiling App_Hall.c...
 compiling App_pwr_off.c...
 compiling App_iap_info.c...
-compiling App_blue_led.c...
-compiling App_Reset_BT.c...
+compiling App_led.c...
 compiling APP_Adc.c...
+compiling App_Reset_BT.c...
+compiling APP_EMR_Power.c...
+compiling APP_Low_Power_Mode.c...
+compiling APP_External_Interrupt_0.c...
+compiling APP_Pin_Interrupt.c...
 compiling Delay.c...
 assembling .\Output\Delay.src...
 assembling STARTUP.A51...
 linking...
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?_IAP_INFO_READ?APP_IAP_INFO
-    CALLER1: ?PR?UART0_IRQHANDLER?SYS_UART0_IRQ
-    CALLER2: ?C_C51STARTUP
-*** WARNING L15: MULTIPLE CALL TO SEGMENT
-    SEGMENT: ?PR?_IAP_FLAG_READ?APP_IAP_INFO
-    CALLER1: ?PR?UART0_IRQHANDLER?SYS_UART0_IRQ
-    CALLER2: ?C_C51STARTUP
-Program Size: data=116.5 xdata=55 code=4688
+Program Size: data=112.5 xdata=62 code=4798
 creating hex file from ".\Output\Demo"...
 User command #1: ..\Library\Startup\exe\hex2bin.exe  .\output\Demo.hex
-".\Output\Demo" - 0 Error(s), 2 Warning(s).
+".\Output\Demo" - 0 Error(s), 0 Warning(s).
 Build Time Elapsed:  00:00:02
 </pre>
 </body>

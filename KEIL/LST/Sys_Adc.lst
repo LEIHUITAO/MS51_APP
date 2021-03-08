@@ -1,11 +1,11 @@
-C51 COMPILER V9.00   SYS_ADC                                                               11/04/2020 15:29:22 PAGE 1   
+C51 COMPILER V9.60.0.0   SYS_ADC                                                           03/08/2021 17:08:25 PAGE 1   
 
 
-C51 COMPILER V9.00, COMPILATION OF MODULE SYS_ADC
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SYS_ADC
 OBJECT MODULE PLACED IN .\Output\Sys_Adc.obj
-COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Sys_Adc.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
-                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Adc.lst) TABS(2) OBJECT(.\Ou
-                    -tput\Sys_Adc.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Main\Sys_Adc.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\
+                    -Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Adc.lst) TABS(2) OBJE
+                    -CT(.\Output\Sys_Adc.obj)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   51   1      }
 
 
-C51 COMPILER V9.00   SYS_ADC                                                               11/04/2020 15:29:22 PAGE 2   
+C51 COMPILER V9.60.0.0   SYS_ADC                                                           03/08/2021 17:08:25 PAGE 2   
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =     99    ----

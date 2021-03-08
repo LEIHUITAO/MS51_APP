@@ -1,11 +1,12 @@
 ; .\Output\Delay.SRC generated from: ..\Main\Delay.c
 ; COMPILER INVOKED BY:
-;        C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Delay.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS(2) SRC(.\Output\Delay.SRC)
+;        C:\Keil_v5\C51\BIN\C51.EXE ..\Main\Delay.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Delay.lst) TABS(2) SRC(.\Output\Delay.SRC)
 
 
 NAME	DELAY
 
 ?PR?_Delay_US?DELAY  SEGMENT CODE 
+?DT?_Delay_US?DELAY  SEGMENT DATA OVERLAYABLE 
 ?PR?_Delay_MS?DELAY  SEGMENT CODE 
 ?DT?_Delay_MS?DELAY  SEGMENT DATA OVERLAYABLE 
 	PUBLIC	_Delay_MS
@@ -16,6 +17,10 @@ NAME	DELAY
      uwTime?141:   DS   2
 	ORG  2
           i?142:   DS   2
+
+	RSEG  ?DT?_Delay_US?DELAY
+?_Delay_US?BYTE:
+     uwTime?040:   DS   2
 ; #include "types.h"
 ; 
 ; //1T,主频16M时有效
@@ -25,7 +30,8 @@ NAME	DELAY
 _Delay_US:
 	USING	0
 			; SOURCE LINE # 4
-;---- Variable 'uwTime?040' assigned to Register 'R6/R7' ----
+	MOV  	uwTime?040,R6
+	MOV  	uwTime?040+01H,R7
 ; {
 			; SOURCE LINE # 5
 ;     uwTime = uwTime;

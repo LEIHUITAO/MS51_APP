@@ -1,11 +1,11 @@
-C51 COMPILER V9.00   SYS_UART0_IRQ                                                         11/04/2020 15:29:22 PAGE 1   
+C51 COMPILER V9.60.0.0   SYS_UART0_IRQ                                                     03/08/2021 17:08:25 PAGE 1   
 
 
-C51 COMPILER V9.00, COMPILATION OF MODULE SYS_UART0_IRQ
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SYS_UART0_IRQ
 OBJECT MODULE PLACED IN .\Output\Sys_Uart0_IRQ.obj
-COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\Sys_Uart0_IRQ.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\M
-                    -ain;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Uart0_IRQ.lst) TABS(2)
-                    - OBJECT(.\Output\Sys_Uart0_IRQ.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Main\Sys_Uart0_IRQ.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Ma
+                    -in;..\Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\Sys_Uart0_IRQ.lst) 
+                    -TABS(2) OBJECT(.\Output\Sys_Uart0_IRQ.obj)
 
 line level    source
 
@@ -13,7 +13,7 @@ line level    source
    2          
    3          extern void app_bt_process(u8 ucData);
    4          
-   5          #define   DEF_Uart0_BPS       115200      //定义波特率
+   5          #define   DEF_Uart0_BPS       115200//115200      //定义波特率
    6          
    7          #define   c_ubTX_Uart0_Buff     16        //发送字节长度
    8          
@@ -62,7 +62,7 @@ line level    source
   51   3                  fTX_Busy = 0;
   52   3              }
   53   2          }
-C51 COMPILER V9.00   SYS_UART0_IRQ                                                         11/04/2020 15:29:22 PAGE 2   
+C51 COMPILER V9.60.0.0   SYS_UART0_IRQ                                                     03/08/2021 17:08:25 PAGE 2   
 
   54   1      
   55   1          _pop_(SFRS);
@@ -92,7 +92,7 @@ line level    source
   79   1       
   80   1          //TH1 = 256 - (1000000/DEF_Uart0_BPS+1);               //16 MHz
   81   1          TH1 = 256 - (1037500/DEF_Uart0_BPS);               //16.6 MHz
-  82   1          
+  82   1          //TH1 = 256 - ((1037500/DEF_Uart0_BPS)-2);               
   83   1          set_TR1;
   84   1        
   85   1      #else
@@ -126,7 +126,7 @@ line level    source
               #else
  114   1          clr_PSH;
  115   1          clr_PS;             //中断优化级最高3、最低0。 clr_PSH:clr_PS = 0
-C51 COMPILER V9.00   SYS_UART0_IRQ                                                         11/04/2020 15:29:22 PAGE 3   
+C51 COMPILER V9.60.0.0   SYS_UART0_IRQ                                                     03/08/2021 17:08:25 PAGE 3   
 
  116   1      #endif
  117   1          clr_TI;
@@ -190,7 +190,7 @@ line level    source
  175   1        //
  176   1        ubTX_Uart_Buff[ubTX_Uart_Save] = ubData;
  177   1      
-C51 COMPILER V9.00   SYS_UART0_IRQ                                                         11/04/2020 15:29:22 PAGE 4   
+C51 COMPILER V9.60.0.0   SYS_UART0_IRQ                                                     03/08/2021 17:08:25 PAGE 4   
 
  178   1        //指向下一缓存
  179   1        ubTX_Uart_Save ++;
@@ -224,7 +224,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    235    ----
+   CODE SIZE        =    247    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----

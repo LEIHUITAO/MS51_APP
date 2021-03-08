@@ -1,178 +1,408 @@
-C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 1   
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 1   
 
 
-C51 COMPILER V9.52.0.0, COMPILATION OF MODULE APP_LED
-OBJECT MODULE PLACED IN .\Output\App_Led.obj
-COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Led.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
-                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Led.lst) OBJECT(.\Output\App
-                    -_Led.obj)
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE APP_LED
+OBJECT MODULE PLACED IN .\Output\App_led.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Main\App_led.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\
+                    -Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_led.lst) TABS(2) OBJE
+                    -CT(.\Output\App_led.obj)
 
 line level    source
 
    1          #include "includes.h"
-   2          #include "App_Led.h"
-   3          
-   4          xdata u8 ubLed_Mode;
-   5          
-   6          xdata u8 ubLed_Disp;
-   7          xdata u8 ubLed_Disp_Bak;
+   2          #include "Sys_Init.h"
+   3          #include "App_led.h"
+   4          #include "App_Hall.h"
+   5          #include "App_Charge_bat.h"
+   6          #include "App_key.h"
+   7          #include "App_BT_Uart0.h"
    8          
-   9          xdata u8 ubLed_Time;
-  10          xdata u8 ubLed_Num;
+   9          //*5ms
+  10          #define c_ucDisp_time             100
   11          
-  12          void    App_Led_Init()
-  13          {       
-  14   1              ubLed_Mode = E_LED_OFF;
-  15   1              ubLed_Disp = E_DISP_OFF;
-  16   1              ubLed_Disp_Bak = E_DISP_OFF;
-  17   1              ubLed_Time = 0;
-  18   1              ubLed_Num = 0;
-  19   1      }
+  12          //bt
+  13          #define c_ucDisp_time_fast 25
+  14          #define c_ucDisp_time_slow 100
+  15          #define c_uwDC_input_led_off_time   400
+  16          
+  17          //bat dc
+  18          static u8 ucBat_low_led_mode;
+  19          static u8 ucDC_led_mode;
   20          
-  21          void Led_Disp_Set()
-  22          {
-  23   1              //
-  24   1              if(ubLed_Disp_Bak == E_DISP_SLOW)               //慢闪时，可以打断
-  25   1              {
-  26   2                      if(ubLed_Disp == ubLed_Disp_Bak)
-  27   2                      {
-  28   3                              return;
-  29   3                      }
-  30   2                      else
-  31   2                      {
-  32   3                              goto __Led_Disp_Set_Updata;
-  33   3                      }
-  34   2              }
-  35   1              else if(ubLed_Disp_Bak != E_DISP_OFF)
-  36   1              {
-  37   2                      return;
-  38   2              }
-  39   1      
-  40   1      __Led_Disp_Set_Updata:
-  41   1              switch(ubLed_Disp)
-  42   1              {
-  43   2              case E_DISP_FAST:
-  44   2                      {
-  45   3                              ubLed_Time = c_ubLed_Time_Fast;
-  46   3                              ubLed_Num = 2;
-  47   3                  a_oLed_R = ~a_oLed_R;
-  48   3                      }break;
-  49   2              case E_DISP_SLOW:
-  50   2                      {
-  51   3                              ubLed_Time = c_ubLed_Time_Slow;
-  52   3                              ubLed_Num = 2;
-  53   3                              a_oLed_R = ~a_oLed_R;
-C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 2   
+  21          //bt
+  22          static u8 ucBT_led_mode_data_w;
+  23          static u8 ucBT_led_mode_emr_b;
+  24          static u16 uwDC_input_led_off_time;
+  25          
+  26          void led_ctrl_init(void)
+  27          {
+  28   1          //
+  29   1          M_BAT_LOW_LED_OFF();
+  30   1          M_DC_LED_OFF();
+  31   1          ucBat_low_led_mode = E_DC_BAT_LED_MODE_OFF;
+  32   1          ucDC_led_mode = E_DC_BAT_LED_MODE_OFF;  
+  33   1      
+  34   1          //bt
+  35   1          ucBT_led_mode_data_w = E_BT_LED_MODE_OFF;
+  36   1          ucBT_led_mode_emr_b = E_BT_LED_MODE_OFF;
+  37   1          uwDC_input_led_off_time = 0;
+  38   1      }
+  39          
+  40          void DC_led_mode(u8 mode)
+  41          {
+  42   1          ucDC_led_mode = mode;
+  43   1      }
+  44          
+  45          void BAT_led_mode(u8 mode)
+  46          {
+  47   1          ucBat_low_led_mode = mode;
+  48   1      }
+  49          
+  50          void DC_BAT_led_ctrl(void)
+  51          {
+  52   1          static xdata u8 ucDisp_time_pwr_low = 0;
+  53   1          static xdata u8 ucDisp_time_charge = 0;
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 2   
 
-  54   3                      }break;
-  55   2              case E_DISP_ON_ONE:
-  56   2                      {
-  57   3                              ubLed_Time = c_ubLed_Time_Fast;
-  58   3                              ubLed_Num = 1;
-  59   3                              a_oLed_R_On();
-  60   3                      }break;
-  61   2              }
-  62   1      
-  63   1              ubLed_Disp_Bak = ubLed_Disp;
-  64   1              ubLed_Disp = E_DISP_OFF;
-  65   1      }
-  66          
-  67          //
-  68          void Led_Main()
-  69          {
-  70   1              if(ubLed_Time == 0)
-  71   1              {
-  72   2                      return;
-  73   2              }
-  74   1      
-  75   1              ubLed_Time --;
-  76   1              if(ubLed_Time != 0)
-  77   1              {
-  78   2                      return;
-  79   2              }
-  80   1                      
-  81   1              //
-  82   1              switch(ubLed_Disp_Bak)
-  83   1              {
-  84   2              case E_DISP_FAST:
-  85   2                      {
-  86   3                              ubLed_Num --;
-  87   3                              if(ubLed_Num == 0)
-  88   3                              {
-  89   4                                      //完成
-  90   4                                      goto __Led_Main_Exit;
-  91   4                              }
-  92   3                              else
-  93   3                              {
-  94   4                                      ubLed_Time = c_ubLed_Time_Fast;
-  95   4      
-  96   4                      a_oLed_R = ~a_oLed_R;
-  97   4                              }
-  98   3                      }break;
-  99   2      
- 100   2              case E_DISP_SLOW:
- 101   2                      {
- 102   3                              ubLed_Num --;
- 103   3                              if(ubLed_Num == 0)
- 104   3                              {
- 105   4                                      //完成
- 106   4                                      goto __Led_Main_Exit;
- 107   4                              }
- 108   3                              else
- 109   3                              {
- 110   4                                      ubLed_Time = c_ubLed_Time_Slow;
- 111   4      
- 112   4                      a_oLed_R = ~a_oLed_R;
- 113   4                              }
- 114   3                      }break;
- 115   2      
-C51 COMPILER V9.52.0.0   APP_LED                                                           03/12/2020 16:13:50 PAGE 3   
+  54   1          static xdata u8 ucDisp_cpl_pwr_low = 0;
+  55   1          static xdata u8 ucDisp_cpl_charge = 0;
+  56   1      
+  57   1          //
+  58   1          if(0 != app_debug_mode_get())
+  59   1          {
+  60   2              return;     //debug
+  61   2          }
+  62   1          
+  63   1          //
+  64   1          if(2 != pwr_on_status())
+  65   1          {
+  66   2              return;     //未开机成功
+  67   2          }
+  68   1      
+  69   1          //hall on
+  70   1          if(1 == app_hall_status())
+  71   1          {
+  72   2      __DC_BAT_led_ctrl_off:
+  73   2              M_BAT_LOW_LED_OFF();
+  74   2              M_DC_LED_OFF();
+  75   2              return;
+  76   2          }
+  77   1      
+  78   1          //蓝牙操作led结束,才提示低电量、充电器接入
+  79   1          if(0 != uwDC_input_led_off_time)
+  80   1          {
+  81   2              goto __DC_BAT_led_ctrl_off;
+  82   2          }
+  83   1      
+  84   1          //hall out
+  85   1          switch(ucBat_low_led_mode)
+  86   1          {
+  87   2              case E_DC_BAT_LED_MODE_OFF: //off
+  88   2              {
+  89   3                  M_BAT_LOW_LED_OFF();
+  90   3                  ucDisp_time_pwr_low = 0;
+  91   3                  ucDisp_cpl_pwr_low = 1;
+  92   3              }break;
+  93   2      
+  94   2              case E_DC_BAT_LED_MODE_ON: //on
+  95   2              {
+  96   3                  M_BAT_LOW_LED_ON();
+  97   3                  ucDisp_time_pwr_low = 0;
+  98   3                  ucDisp_cpl_pwr_low = 0;
+  99   3              }break;
+ 100   2      
+ 101   2              case E_DC_BAT_LED_MODE_DISP: //slow disp
+ 102   2              {
+ 103   3                  ucDisp_time_pwr_low++;
+ 104   3                  if(ucDisp_time_pwr_low >= c_ucDisp_time)
+ 105   3                  {
+ 106   4                      ucDisp_time_pwr_low = 0;
+ 107   4      
+ 108   4                      if(0 == ucDisp_cpl_pwr_low)
+ 109   4                      {
+ 110   5                          M_BAT_LOW_LED_OFF();
+ 111   5                          ucDisp_cpl_pwr_low = 1;
+ 112   5                      }
+ 113   4                      else
+ 114   4                      {
+ 115   5                          M_BAT_LOW_LED_ON();
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 3   
 
- 116   2              case E_DISP_ON_ONE:
- 117   2                      {
- 118   3                              ubLed_Num --;
- 119   3                              if(ubLed_Num == 0)
- 120   3                              {
- 121   4                                      //完成
- 122   4                                      goto __Led_Main_Exit;
- 123   4                              }
- 124   3                              else
- 125   3                              {
- 126   4                                      ubLed_Time = c_ubLed_Time_Slow;
- 127   4                              }
- 128   3                      }break;
- 129   2      
- 130   2              default:
- 131   2                      {
- 132   3      __Led_Main_Exit:
- 133   3                              ubLed_Disp_Bak = E_DISP_OFF;
- 134   3      
- 135   3                              Led_Disp_Set();                 //更新LED状态
- 136   3                              if(ubLed_Disp_Bak == E_DISP_OFF)
- 137   3                              {
- 138   4                                      //不闪时选择设置模式
- 139   4                                      if(ubLed_Mode == E_LED_OFF)
- 140   4                                      {
- 141   5                                              //off
- 142   5                                              a_oLed_R_Off();
- 143   5                                      }
- 144   4                                      else
- 145   4                                      {
- 146   5                                              //on
- 147   5                                              a_oLed_R_On();
- 148   5                                      }
- 149   4                              }       
- 150   3                      }break;
- 151   2              }
- 152   1      }
+ 116   5                          ucDisp_cpl_pwr_low = 0;
+ 117   5                      }
+ 118   4                  }
+ 119   3              }break;
+ 120   2          }
+ 121   1      
+ 122   1          //
+ 123   1          switch(ucDC_led_mode)
+ 124   1          {
+ 125   2              case E_DC_BAT_LED_MODE_OFF: //off
+ 126   2              {
+ 127   3                  M_DC_LED_OFF();
+ 128   3                  ucDisp_time_charge = 0;
+ 129   3                  ucDisp_cpl_charge = 1;
+ 130   3              }break;
+ 131   2      
+ 132   2              case E_DC_BAT_LED_MODE_ON: //on
+ 133   2              {
+ 134   3                  M_DC_LED_ON();
+ 135   3                  ucDisp_time_charge = 0;
+ 136   3                  ucDisp_cpl_charge = 0;
+ 137   3              }break;
+ 138   2      
+ 139   2              case E_DC_BAT_LED_MODE_DISP: //slow disp
+ 140   2              {
+ 141   3                  ucDisp_time_charge++;
+ 142   3                  if(ucDisp_time_charge >= c_ucDisp_time)
+ 143   3                  {
+ 144   4                      ucDisp_time_charge = 0;
+ 145   4      
+ 146   4                      if(0 == ucDisp_cpl_charge)
+ 147   4                      {
+ 148   5                          M_DC_LED_OFF();
+ 149   5                          ucDisp_cpl_charge = 1;
+ 150   5                      }
+ 151   4                      else
+ 152   4                      {
+ 153   5                          M_DC_LED_ON();
+ 154   5                          ucDisp_cpl_charge = 0;
+ 155   5                      }
+ 156   4                  }
+ 157   3              }break;
+ 158   2          }
+ 159   1      }
+ 160          
+ 161          void BT_emr_led_mode(u8 mode)
+ 162          {
+ 163   1          ucBT_led_mode_emr_b = mode;
+ 164   1          uwDC_input_led_off_time = c_uwDC_input_led_off_time;    //接入充电器时，灯状态改变延时关LED时间
+ 165   1      }
+ 166          
+ 167          void BT_data_led_mode(u8 mode)
+ 168          {
+ 169   1          ucBT_led_mode_data_w = mode;
+ 170   1          uwDC_input_led_off_time = c_uwDC_input_led_off_time;    //接入充电器时，灯状态改变延时关LED时间
+ 171   1      }
+ 172          
+ 173          void BT_led_ctrl(void)
+ 174          {
+ 175   1          static xdata u8 ucDisp_time_data_w = 0;
+ 176   1          static xdata u8 ucDisp_time_emr_b = 0;
+ 177   1          static xdata u8 ucDisp_cpl_data_w = 0;
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 4   
+
+ 178   1          static xdata u8 ucDisp_cpl_emr_b = 0;
+ 179   1      
+ 180   1          //
+ 181   1          if(0 != app_debug_mode_get())
+ 182   1          {
+ 183   2              return;     //debug
+ 184   2          }
+ 185   1          
+ 186   1          //
+ 187   1          if(2 != pwr_on_status())
+ 188   1          {
+ 189   2              return;     //未开机成功
+ 190   2          }
+ 191   1      
+ 192   1          //hall on
+ 193   1          if(1 == app_hall_status())
+ 194   1          {
+ 195   2              __led_ctrl_off:
+ 196   2              M_DATA_W_LED_OFF();
+ 197   2              M_EMR_B_LED_OFF();
+ 198   2              return;
+ 199   2          }
+ 200   1      
+ 201   1          //接入充电器,低电压 延时关其它LED
+ 202   1          if(1 == DC_input_status() || 1 == BAT_low_status())
+ 203   1          {
+ 204   2              if(0 == uwDC_input_led_off_time)
+ 205   2              {
+ 206   3                  goto __led_ctrl_off;
+ 207   3              }
+ 208   2              else
+ 209   2              {
+ 210   3                  uwDC_input_led_off_time--;
+ 211   3              }
+ 212   2          }
+ 213   1      
+ 214   1          //hall out
+ 215   1          switch(ucBT_led_mode_data_w)
+ 216   1          {
+ 217   2              case E_BT_LED_MODE_OFF: //off
+ 218   2              {
+ 219   3                  M_DATA_W_LED_OFF();
+ 220   3                  ucDisp_time_data_w = 0;
+ 221   3                  ucDisp_cpl_data_w = 1;
+ 222   3              }break;
+ 223   2      
+ 224   2              case E_BT_LED_MODE_ON: //on
+ 225   2              {
+ 226   3                  M_DATA_W_LED_ON();
+ 227   3                  ucDisp_time_data_w = 0;
+ 228   3                  ucDisp_cpl_data_w = 0;
+ 229   3              }break;
+ 230   2      
+ 231   2              case E_BT_LED_MODE_DISP_FAST:
+ 232   2              {
+ 233   3                  ucDisp_time_data_w++;
+ 234   3                  if(ucDisp_time_data_w >= c_ucDisp_time_fast)
+ 235   3                  {
+ 236   4                      ucDisp_time_data_w = 0;
+ 237   4      
+ 238   4                      if(0 == ucDisp_cpl_data_w)
+ 239   4                      {
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 5   
+
+ 240   5                          M_DATA_W_LED_OFF();
+ 241   5                          ucDisp_cpl_data_w = 1;
+ 242   5                      }
+ 243   4                      else
+ 244   4                      {
+ 245   5                          M_DATA_W_LED_ON();
+ 246   5                          ucDisp_cpl_data_w = 0;
+ 247   5                      }
+ 248   4                  }
+ 249   3              }break;
+ 250   2      
+ 251   2              case E_BT_LED_MODE_DISP_SLOW:
+ 252   2              {
+ 253   3                  ucDisp_time_data_w++;
+ 254   3                  if(ucDisp_time_data_w >= c_ucDisp_time_slow)
+ 255   3                  {
+ 256   4                      ucDisp_time_data_w = 0;
+ 257   4      
+ 258   4                      if(0 == ucDisp_cpl_data_w)
+ 259   4                      {
+ 260   5                          M_DATA_W_LED_OFF();
+ 261   5                          ucDisp_cpl_data_w = 1;
+ 262   5                      }
+ 263   4                      else
+ 264   4                      {
+ 265   5                          M_DATA_W_LED_ON();
+ 266   5                          ucDisp_cpl_data_w = 0;
+ 267   5                      }
+ 268   4                  }
+ 269   3              }break;
+ 270   2          }
+ 271   1      
+ 272   1          //
+ 273   1          switch(ucBT_led_mode_emr_b)
+ 274   1          {
+ 275   2              case E_BT_LED_MODE_OFF: //off
+ 276   2              {
+ 277   3                  M_EMR_B_LED_OFF();
+ 278   3                  ucDisp_time_emr_b = 0;
+ 279   3                  ucDisp_cpl_emr_b = 1;
+ 280   3              }break;
+ 281   2      
+ 282   2              case E_BT_LED_MODE_ON: //on
+ 283   2              {
+ 284   3                  M_EMR_B_LED_ON();
+ 285   3                  ucDisp_time_emr_b = 0;
+ 286   3                  ucDisp_cpl_emr_b = 0;
+ 287   3              }break;
+ 288   2      
+ 289   2              case E_BT_LED_MODE_DISP_FAST:
+ 290   2              {
+ 291   3                  ucDisp_time_emr_b++;
+ 292   3                  if(ucDisp_time_emr_b >= c_ucDisp_time_fast)
+ 293   3                  {
+ 294   4                      ucDisp_time_emr_b = 0;
+ 295   4      
+ 296   4                      if(0 == ucDisp_cpl_emr_b)
+ 297   4                      {
+ 298   5                          M_EMR_B_LED_OFF();
+ 299   5                          ucDisp_cpl_emr_b = 1;
+ 300   5                      }
+ 301   4                      else
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 6   
+
+ 302   4                      {
+ 303   5                          M_EMR_B_LED_ON();
+ 304   5                          ucDisp_cpl_emr_b = 0;
+ 305   5                      }
+ 306   4                  }
+ 307   3              }break;
+ 308   2      
+ 309   2              case E_BT_LED_MODE_DISP_SLOW:
+ 310   2              {
+ 311   3                  ucDisp_time_emr_b++;
+ 312   3                  if(ucDisp_time_emr_b >= c_ucDisp_time_slow)
+ 313   3                  {
+ 314   4                      ucDisp_time_emr_b = 0;
+ 315   4      
+ 316   4                      if(0 == ucDisp_cpl_emr_b)
+ 317   4                      {
+ 318   5                          M_EMR_B_LED_OFF();
+ 319   5                          ucDisp_cpl_emr_b = 1;
+ 320   5                      }
+ 321   4                      else
+ 322   4                      {
+ 323   5                          M_EMR_B_LED_ON();
+ 324   5                          ucDisp_cpl_emr_b = 0;
+ 325   5                      }
+ 326   4                  }
+ 327   3              }break;
+ 328   2          }
+ 329   1      }
+ 330          
+ 331          
+ 332          void debug_led_ctrl(u8 leds)
+ 333          {
+ 334   1          //
+ 335   1          if(leds & 0x01)
+ 336   1          {
+ 337   2              M_DATA_W_LED_ON();
+ 338   2          }
+ 339   1          else
+ 340   1          {
+ 341   2              M_DATA_W_LED_OFF();
+ 342   2          }
+ 343   1      
+ 344   1          //
+ 345   1          if(leds & 0x02)
+ 346   1          {
+ 347   2              M_EMR_B_LED_ON();
+ 348   2          }
+ 349   1          else
+ 350   1          {
+ 351   2              M_EMR_B_LED_OFF();
+ 352   2          }
+ 353   1      
+ 354   1          //
+ 355   1          if(leds & 0x04)
+ 356   1          {
+ 357   2              M_BAT_LOW_LED_ON();
+ 358   2          }
+ 359   1          else
+ 360   1          {
+ 361   2              M_BAT_LOW_LED_OFF();
+ 362   2          }
+ 363   1      
+C51 COMPILER V9.60.0.0   APP_LED                                                           03/08/2021 17:08:26 PAGE 7   
+
+ 364   1          //
+ 365   1          if(leds & 0x08)
+ 366   1          {
+ 367   2              M_DC_LED_ON();
+ 368   2          }
+ 369   1          else
+ 370   1          {
+ 371   2              M_DC_LED_OFF();
+ 372   2          }
+ 373   1      }
+ 374          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    215    ----
+   CODE SIZE        =    538    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =      5    ----
+   XDATA SIZE       =      8    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
+   DATA SIZE        =      6    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

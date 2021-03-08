@@ -1,11 +1,11 @@
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 1   
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 1   
 
 
-C51 COMPILER V9.00, COMPILATION OF MODULE APP_BT_UART0
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE APP_BT_UART0
 OBJECT MODULE PLACED IN .\Output\App_BT_Uart0.obj
-COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_BT_Uart0.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Ma
-                    -in;..\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_BT_Uart0.lst) TABS(2) O
-                    -BJECT(.\Output\App_BT_Uart0.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Main\App_BT_Uart0.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Mai
+                    -n;..\Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_BT_Uart0.lst) TA
+                    -BS(2) OBJECT(.\Output\App_BT_Uart0.obj)
 
 line level    source
 
@@ -14,416 +14,384 @@ line level    source
    3          #include "App_BT_Uart0.h"
    4          #include "Sys_Init.h"
    5          #include "App_pwr_off.h"
-   6          #include "App_iap_info.h"
-   7          #include "App_blue_led.h"
+   6          #include "App_Hall.h"
+   7          #include "App_iap_info.h"
    8          #include "App_Charge_bat.h"
-   9          #include "App_Reset_BT.h"
-  10          
-  11          #define c_uwRev_time_out        50     //*5ms
-  12          #define DEF_SEND_CONNECT_TIME   100     //*5ms
-  13          #define c_ucConnect_num         10      //time = c_ucConnect_num*DEF_SEND_CONNECT_TIME
-  14          
-  15          #define c_uwEmr_writing_count_Time    29
+   9          #include "App_led.h"
+  10          #include "App_Reset_BT.h"
+  11          #include "APP_Low_Power_Mode.h"
+  12          
+  13          #define c_uwRev_time_out        50     //*5ms
+  14          #define DEF_SEND_CONNECT_TIME   100     //*5ms
+  15          #define c_ucConnect_num         10      //time = c_ucConnect_num*DEF_SEND_CONNECT_TIME
   16          
   17          #define WRITE_FLAG              1
   18          #define READ_FLAG               2
   19          
   20          typedef enum
   21          {
-  22              E_LED_MODE_OFF_BAT = 0,
-  23              E_LED_MODE_ON_BAT,
-  24              E_LED_MODE_DISP_BAT,
-  25          }T_LED_MODE_BAT;
-  26          
-  27          typedef enum
-  28          {
-  29              E_CMD_RX_LED = 0x00,
-  30              E_CMD_RX_SHUT_DOWN,
-  31              E_CMD_RX_CONNECT,
-  32              E_CMD_RX_POWER_LED,
-  33            E_CMD_RX_RST_BT,
-  34          }T_CMD_RX;
-  35          
-  36          typedef enum
-  37          {
-  38              E_CMD_TX_KEY = 0x00,
-  39              E_CMD_TX_CONNECT,
-  40              E_CMD_TX_SHUT_DOWN_TIME_CLR,
-  41              E_CMD_TX_ADC_DATA,
-  42          }T_CMD_TX;
-  43          
-  44          u8 bt_connection_status = 0;
-  45          u8 current_writing_status = 0;
-  46          u8 pen_up_mark_status = 0;
-  47          
-  48          static u8 ucRxSatus;
-  49          static u16 uwRev_time_out;
-  50          static bit bConnect_one;
-  51          u8 ucBlue_sleep_mode;
-  52          static u8 ucConnect_num;
-  53          
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 2   
+  22              E_CMD_RX_LED = 0x00,
+  23              E_CMD_RX_SHUT_DOWN,
+  24              E_CMD_RX_CONNECT,
+  25              E_CMD_RX_RST_BT,
+  26              E_CMD_RX_DEBUG_MODE,
+  27              E_CMD_RX_DEBUG_LED,
+  28              E_CMD_TX_BLE_ENTERS_SLEEP_MODE
+  29          }T_CMD_RX;
+  30          
+  31          typedef enum
+  32          {
+  33              E_CMD_TX_KEY = 0x00,
+  34              E_CMD_TX_CONNECT,
+  35              E_CMD_TX_SHUT_DOWN_TIME_CLR,
+  36              E_CMD_TX_HALL_SLEEP,
+  37              E_CMD_TX_ADC_DATA,
+  38          }T_CMD_TX;
+  39          
+  40          static u8 ucRxSatus;
+  41          static u16 uwRev_time_out;
+  42          static bit bConnect_one;
+  43          static u8 ucConnect_num;
+  44          static u8 ucDebug_mode = 0;
+  45          
+  46          static void app_bt_process_cmd(u8 ucCmd,u8 * pData);
+  47          static void led_ctrl(void);
+  48          static void connect_ctrl(void);
+  49          static void rev_timeOut(void);
+  50          
+  51          void app_bt_init(void)
+  52          {
+  53   1          Uart0_Init();
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 2   
 
-  54          extern u8 ucDC_input;
-  55          extern u8 ucDisp_time;
-  56          extern u8 ucLed_mode_full;
-  57          extern u8 ucLed_mode_full_bat;
-  58          extern u8 ucLed_mode_pwr_low;
-  59          extern u8 ucLed_mode_pwr_low_bat;
-  60          extern u8 system_operation_status;
-  61          u8 force_page_feed_current_state = 0;
-  62          u16 emr_writing_count = c_uwEmr_writing_count_Time;
-  63          u8 emr_writing_state = 0;
-  64          
-  65          static void app_bt_process_cmd(u8 ucCmd,u8 * pData);
-  66          static void connect_ctrl(void);
-  67          static void rev_timeOut(void);
-  68          
-  69          void app_bt_init(void)
-  70          {
-  71   1          Uart0_Init();
-  72   1      
-  73   1          ucRxSatus = 0;
-  74   1          uwRev_time_out = 0;
-  75   1          bConnect_one = 0;
-  76   1          ucBlue_sleep_mode = 0;
-  77   1        ucConnect_num = 0;
-  78   1      }
-  79          
-  80          void app_bt_process(u8 ucData)
-  81          {
-  82   1          static u8 ucRxLen;
-  83   1          static u8 ucRxCount;
-  84   1          static u8 ucRxBuffTemp[8];
-  85   1        u8 ucSum;
-  86   1        u8 i;
-  87   1          
-  88   1          uwRev_time_out = 0;
-  89   1          
-  90   1        switch(ucRxSatus)
-  91   1        {
-  92   2          case 0://head
-  93   2          {
-  94   3            if (ucData==0xfb)
-  95   3            {
-  96   4              ucRxSatus=1;
-  97   4            }
-  98   3          }break;
-  99   2          
- 100   2          case 1://len
- 101   2          {
- 102   3            ucRxLen=ucData;
- 103   3            ucRxCount=0;
- 104   3            ucRxBuffTemp[ucRxCount++]=ucData;
- 105   3            ucRxSatus=2;
- 106   3          }break;
- 107   2          
- 108   2          case 2://
- 109   2          {
- 110   3            ucRxBuffTemp[ucRxCount++]=ucData;
- 111   3            if (ucRxCount>=ucRxLen)
- 112   3            {
- 113   4              ucSum=0;
- 114   4              for(i=0;i<ucRxLen-1;i++)
- 115   4              {
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 3   
+  54   1      
+  55   1          ucRxSatus = 0;
+  56   1          uwRev_time_out = 0;
+  57   1          bConnect_one = 0;
+  58   1          ucConnect_num = 0;
+  59   1      }
+  60          
+  61          void app_bt_process(u8 ucData)
+  62          {
+  63   1          static u8 ucRxLen;
+  64   1          static u8 ucRxCount;
+  65   1          static u8 ucRxBuffTemp[8];
+  66   1        u8 ucSum;
+  67   1        u8 i;
+  68   1          
+  69   1          uwRev_time_out = 0;
+  70   1          
+  71   1        switch(ucRxSatus)
+  72   1        {
+  73   2          case 0://head
+  74   2          {
+  75   3            if (ucData==0xfb)
+  76   3            {
+  77   4              ucRxSatus=1;
+  78   4            }
+  79   3          }break;
+  80   2          
+  81   2          case 1://len
+  82   2          {
+  83   3            ucRxLen=ucData;
+  84   3            ucRxCount=0;
+  85   3            ucRxBuffTemp[ucRxCount++]=ucData;
+  86   3            ucRxSatus=2;
+  87   3          }break;
+  88   2          
+  89   2          case 2://
+  90   2          {
+  91   3            ucRxBuffTemp[ucRxCount++]=ucData;
+  92   3            if (ucRxCount>=ucRxLen)
+  93   3            {
+  94   4              ucSum=0;
+  95   4              for(i=0;i<ucRxLen-1;i++)
+  96   4              {
+  97   5                ucSum+=ucRxBuffTemp[i];
+  98   5              }
+  99   4              if (ucSum==ucRxBuffTemp[i])
+ 100   4              {
+ 101   5                          /////////////////////////////////////////////////
+ 102   5                //ucRxBuffTemp[2] is cmd
+ 103   5                          //ucRxBuffTemp[3~x] is data0~x
+ 104   5                          app_bt_process_cmd(ucRxBuffTemp[2],&ucRxBuffTemp[3]);
+ 105   5              }
+ 106   4              ucRxSatus=0;
+ 107   4            }
+ 108   3          }break;
+ 109   2          
+ 110   2          default:
+ 111   2          {
+ 112   3            ucRxSatus=0;
+ 113   3          }break;
+ 114   2        }
+ 115   1      }
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 3   
 
- 116   5                ucSum+=ucRxBuffTemp[i];
- 117   5              }
- 118   4              if (ucSum==ucRxBuffTemp[i])
- 119   4              {
- 120   5                          /////////////////////////////////////////////////
- 121   5                //ucRxBuffTemp[2] is cmd
- 122   5                          //ucRxBuffTemp[3~x] is data0~x
- 123   5                          app_bt_process_cmd(ucRxBuffTemp[2],&ucRxBuffTemp[3]);
- 124   5              }
- 125   4              ucRxSatus=0;
- 126   4            }
- 127   3          }break;
- 128   2          
- 129   2          default:
- 130   2          {
- 131   3            ucRxSatus=0;
- 132   3          }break;
- 133   2        }
- 134   1      }
- 135          
- 136          //head  len  W/R  cmd  data sum 
- 137          void app_bt_send(u8 ucCmd,u8 *pData,u16 uwLen,u8 ucRW)
- 138          {
- 139   1          xdata u8 ucRxSatusBuf[16];
- 140   1        u8 ucSum=0,i;
+ 116          
+ 117          //head  len  W/R  cmd  data sum 
+ 118          void app_bt_send(u8 ucCmd,u8 *pData,u16 uwLen,u8 ucRW)
+ 119          {
+ 120   1          xdata u8 ucRxSatusBuf[16];
+ 121   1        u8 ucSum=0,i;
+ 122   1          
+ 123   1        /*====head===========================================================*/
+ 124   1          ucRxSatusBuf[0]=0xfb;
+ 125   1        /*====length===========================================================*/
+ 126   1        ucRxSatusBuf[1]=uwLen+4;
+ 127   1        ucSum+=ucRxSatusBuf[1];
+ 128   1          /*====w/r===========================================================*/
+ 129   1        ucRxSatusBuf[2]=ucRW;
+ 130   1        ucSum+=ucRxSatusBuf[2];
+ 131   1        /*====cmd  ===========================================================*/
+ 132   1        ucRxSatusBuf[3]=ucCmd;
+ 133   1        ucSum+=ucRxSatusBuf[3];
+ 134   1          /*====data===========================================================*/
+ 135   1        for (i=0;i<uwLen;i++)
+ 136   1        {
+ 137   2          ucRxSatusBuf[4+i]=*pData++;
+ 138   2          ucSum+=ucRxSatusBuf[4+i];
+ 139   2        }
+ 140   1        ucRxSatusBuf[4+uwLen]=ucSum;
  141   1          
- 142   1        /*====head===========================================================*/
- 143   1          ucRxSatusBuf[0]=0xfb;
- 144   1        /*====length===========================================================*/
- 145   1        ucRxSatusBuf[1]=uwLen+4;
- 146   1        ucSum+=ucRxSatusBuf[1];
- 147   1          /*====w/r===========================================================*/
- 148   1        ucRxSatusBuf[2]=ucRW;
- 149   1        ucSum+=ucRxSatusBuf[2];
- 150   1        /*====cmd  ===========================================================*/
- 151   1        ucRxSatusBuf[3]=ucCmd;
- 152   1        ucSum+=ucRxSatusBuf[3];
- 153   1          /*====data===========================================================*/
- 154   1        for (i=0;i<uwLen;i++)
- 155   1        {
- 156   2          ucRxSatusBuf[4+i]=*pData++;
- 157   2          ucSum+=ucRxSatusBuf[4+i];
- 158   2        }
- 159   1        ucRxSatusBuf[4+uwLen]=ucSum;
- 160   1          
- 161   1          for(i=0;i<(5+uwLen);i++)
- 162   1          {
- 163   2              Uart0_Send_Byte_Push(ucRxSatusBuf[i]);
- 164   2          }
- 165   1      }
- 166          
- 167          void app_bt_server(void)
- 168          {
- 169   1          connect_ctrl();
- 170   1          rev_timeOut();
- 171   1      }
- 172          
- 173          static void app_bt_process_cmd(u8 ucCmd,u8 * pData)
- 174          {
- 175   1          xdata u16 uwRom_var;
- 176   1          xdata u16 uwRom_crc;
- 177   1          xdata u16 uwRx_var;
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 4   
+ 142   1          for(i=0;i<(5+uwLen);i++)
+ 143   1          {
+ 144   2              Uart0_Send_Byte_Push(ucRxSatusBuf[i]);
+ 145   2          }
+ 146   1      }
+ 147          
+ 148          void app_bt_server(void)
+ 149          {
+ 150   1          BT_led_ctrl();
+ 151   1          //connect_ctrl();
+ 152   1        rev_timeOut();
+ 153   1      }
+ 154          
+ 155          static void app_bt_process_cmd(u8 ucCmd,u8 * pData)
+ 156          {
+ 157   1          xdata u16 uwRom_var;
+ 158   1          xdata u16 uwRom_crc;
+ 159   1          xdata u16 uwRx_var;
+ 160   1          xdata u16 uwRx_crc;
+ 161   1      
+ 162   1          switch(ucCmd)
+ 163   1          {
+ 164   2              /*
+ 165   2              byte0 选择灯: 0 蓝灯，1 白灯
+ 166   2              byte1 ：选择蓝灯时，0 关，1 常灯，2 快闪，3 慢闪 三次闭关
+ 167   2              byte1 ：选择白灯时，0 关，1 常灯
+ 168   2              */
+ 169   2              case E_CMD_RX_LED:
+ 170   2              {
+ 171   3                  switch(*(pData+0))
+ 172   3                  {
+ 173   4                      case 0:
+ 174   4                      {
+ 175   5                          switch(*(pData+1))
+ 176   5                          {
+ 177   6                              case 0:
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 4   
 
- 178   1          xdata u16 uwRx_crc;
- 179   1          switch(ucCmd)
- 180   1          {
- 181   2              //led
- 182   2              case E_CMD_RX_LED:
- 183   2              {
- 184   3                  if(ucBlue_sleep_mode == 1)
- 185   3                      return;
- 186   3                  if(*(pData+0) == E_LED_MODE_DISP_SLOW_3)
- 187   3                  {
- 188   4                      if(bt_connection_status == 1)
- 189   4                          bt_connection_status = 0;
- 190   4                      if(force_page_feed_current_state == 0)
- 191   4                      {
- 192   5                          force_page_feed_current_state = 1;
- 193   5                          ucLed_mode_full_bat = ucLed_mode_full;
- 194   5                          ucLed_mode_full = E_LED_MODE_DISP_BAT;
- 195   5                          /*ucLed_mode_pwr_low_bat = ucLed_mode_pwr_low;
- 196   5                          ucLed_mode_pwr_low = E_LED_MODE_OFF_BAT;*/
- 197   5                          blue_led_mode(E_LED_MODE_OFF); //正常工作状态蓝灯常亮，在短按按键时需要关闭
- 198   5                      }
- 199   4                  }
- 200   3                  else
- 201   3                  {
- 202   4                      if(*(pData+0) == E_LED_MODE_DISP_SLOW)
- 203   4                      {
- 204   5                          if(current_writing_status == 0)
- 205   5                          {
- 206   6                              current_writing_status = 1;
- 207   6                          }
- 208   5                          if(force_page_feed_current_state == 1)
- 209   5                          {
- 210   6                              force_page_feed_current_state = 0;
- 211   6                              ucLed_mode_full = ucLed_mode_full_bat;
- 212   6                              //ucLed_mode_pwr_low = E_LED_MODE_OFF_BAT;
- 213   6                              //blue_led_mode(E_LED_MODE_ON);//在书写第一次打开蓝灯
- 214   6                              //return;
- 215   6                          }
- 216   5                      }
- 217   4                      /*else if((*(pData+0) == E_LED_MODE_ON) && (1 == ucDC_input))
- 218   4                      {
- 219   4                          emr_writing_count = 0;
- 220   4                          //blue_led_mode(E_LED_MODE_OFF);
- 221   4                          return;
- 222   4                      }*/
- 223   4                      else if(*(pData+0) == E_LED_MODE_DISP_FAST_3)
- 224   4                      {
- 225   5                          if(current_writing_status == 1)
- 226   5                          {
- 227   6                              //bt_connection_status = 0;
- 228   6                              emr_writing_count = 0;
- 229   6                              return;
- 230   6                          }
- 231   5                          else if(current_writing_status == 0)
- 232   5                          {
- 233   6                              bt_connection_status = 1;
- 234   6                          }
- 235   5                      }
- 236   4                      else if(*(pData+0) == E_LED_MODE_ON)
- 237   4                      {
- 238   5                          if(current_writing_status == 1)
- 239   5                          {
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 5   
+ 178   6                              {
+ 179   7                                  BT_emr_led_mode(E_BT_LED_MODE_OFF);
+ 180   7                              }break;
+ 181   6      
+ 182   6                              case 1:
+ 183   6                              {
+ 184   7                                  BT_emr_led_mode(E_BT_LED_MODE_ON);
+ 185   7                              }break;
+ 186   6      
+ 187   6                              case 2:
+ 188   6                              {
+ 189   7                                  BT_emr_led_mode(E_BT_LED_MODE_DISP_FAST);
+ 190   7                              }break;
+ 191   6      
+ 192   6                              case 3:
+ 193   6                              {
+ 194   7                                  BT_emr_led_mode(E_BT_LED_MODE_DISP_SLOW);
+ 195   7                              }break;
+ 196   6                          }
+ 197   5                      }break;
+ 198   4      
+ 199   4                      case 1:
+ 200   4                      {
+ 201   5                          switch(*(pData+1))
+ 202   5                          {
+ 203   6                              case 0:
+ 204   6                              {
+ 205   7                                  BT_data_led_mode(E_BT_LED_MODE_OFF);
+ 206   7                              }break;
+ 207   6      
+ 208   6                              case 1:
+ 209   6                              {
+ 210   7                                  BT_data_led_mode(E_BT_LED_MODE_ON);
+ 211   7                              }break;
+ 212   6                          }
+ 213   5                      }break;
+ 214   4                  }
+ 215   3              }break;
+ 216   2              
+ 217   2              case E_CMD_RX_SHUT_DOWN:
+ 218   2              {
+ 219   3                  pwr_off_set();
+ 220   3              }break;
+ 221   2      
+ 222   2              case E_CMD_RX_CONNECT:
+ 223   2              {
+ 224   3                  bConnect_one = 1;
+ 225   3                  
+ 226   3                  uwRx_var = (*(pData+0) << 8) | *(pData+1);
+ 227   3                  uwRx_crc = (*(pData+2) << 8) | *(pData+3);
+ 228   3                  iap_info_read(&uwRom_var,&uwRom_crc);
+ 229   3                  
+ 230   3                  //
+ 231   3                  if(uwRom_var != uwRx_var || uwRom_crc != uwRx_crc)
+ 232   3                  {
+ 233   4                      iap_info_write();   //置IAP升级标志
+ 234   4                  }
+ 235   3              }break;
+ 236   2              
+ 237   2              case E_CMD_RX_RST_BT:
+ 238   2              {
+ 239   3                  ucDebug_mode = 0;       //复位蓝模块时退出debug模式
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 5   
 
- 240   6                              current_writing_status = 0;
- 241   6                          }
- 242   5                          pen_up_mark_status = 1;
- 243   5                          /*emr_writing_count = 0;
- 244   5                          return;*/
- 245   5                      }
- 246   4                      emr_writing_count = 0;
- 247   4                      blue_led_mode(*(pData+0));
- 248   4                  }
- 249   3              }break;
- 250   2              
- 251   2              case E_CMD_RX_SHUT_DOWN:
- 252   2              {
- 253   3                  //ucBlue_sleep_mode = 0;
- 254   3                  pwr_off_set();
- 255   3                  /*if(system_operation_status == 1)
- 256   3                  {
- 257   3                      system_operation_status = 0;
- 258   3                      app_bt_system_shutdown();
- 259   3                  }*/
- 260   3              }break;
- 261   2              
- 262   2              case E_CMD_RX_POWER_LED:
- 263   2              {
- 264   3                  if(1 == *(pData+0))
- 265   3                  {
- 266   4                      ucBlue_sleep_mode = 1;
- 267   4                  }
- 268   3                  else
- 269   3                  {
- 270   4                      if(1 == ucBlue_sleep_mode)
- 271   4                          power_led(1);
- 272   4                      
- 273   4                      ucBlue_sleep_mode = 0;
- 274   4                  }
- 275   3              }break;
- 276   2      
- 277   2              case E_CMD_RX_CONNECT:
- 278   2              {
- 279   3                  bConnect_one = 1;
- 280   3                  
- 281   3                  uwRx_var = (*(pData+0) << 8) | *(pData+1);
- 282   3                  uwRx_crc = (*(pData+2) << 8) | *(pData+3);
- 283   3                  iap_info_read(&uwRom_var,&uwRom_crc);
- 284   3                  
- 285   3                  //
- 286   3                  if(uwRom_var != uwRx_var || uwRom_crc != uwRx_crc)
- 287   3                  {
- 288   4                      iap_info_write();   //置IAP升级标志
- 289   4                  }
- 290   3              }break;
- 291   2              
- 292   2              case E_CMD_RX_RST_BT:
- 293   2              {
- 294   3                  App_Reset_BT_start();
- 295   3              }break;
- 296   2          }
- 297   1      }
- 298          
- 299          static void rev_timeOut(void)
- 300          {
- 301   1          if(0 != ucRxSatus)
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 6   
+ 240   3                  App_Reset_BT_start();
+ 241   3              }break;
+ 242   2      
+ 243   2              case E_CMD_RX_DEBUG_MODE:
+ 244   2              {
+ 245   3                  ucDebug_mode = *(pData+0);
+ 246   3                  if(1 == ucDebug_mode)
+ 247   3                  {
+ 248   4                      debug_led_ctrl(0x00);
+ 249   4                  }
+ 250   3              }break;
+ 251   2      
+ 252   2              case E_CMD_RX_DEBUG_LED:
+ 253   2              {
+ 254   3                  debug_led_ctrl(*(pData+0));
+ 255   3              }break;
+ 256   2      
+ 257   2              case E_CMD_TX_BLE_ENTERS_SLEEP_MODE:
+ 258   2              {
+ 259   3                  if(*(pData+0) == APP_CMD_SYSTEM_DEEP_SLEEP_MODE)
+ 260   3                  {
+ 261   4                      APP_System_Sleep_State(APP_CMD_SYSTEM_DEEP_SLEEP_MODE);
+ 262   4                  }
+ 263   3                  else if(*(pData+0) == APP_CMD_SYSTEM_IDLE_SLEEP_MODE)
+ 264   3                  {
+ 265   4                      APP_System_Sleep_State(APP_CMD_SYSTEM_DEEP_SLEEP_MODE);
+ 266   4                  }
+ 267   3                  else if(*(pData+0) == APP_CMD_SYSTEM_DEEP_SLEEP_TIME_MODE)
+ 268   3                  {
+ 269   4                      APP_System_Sleep_State(APP_CMD_SYSTEM_DEEP_SLEEP_TIME_MODE);
+ 270   4                  }
+ 271   3              }break;
+ 272   2          }
+ 273   1      }
+ 274          
+ 275          static void rev_timeOut(void)
+ 276          {
+ 277   1          if(0 != ucRxSatus)
+ 278   1          {
+ 279   2              uwRev_time_out++;
+ 280   2              if(uwRev_time_out >= c_uwRev_time_out)
+ 281   2              {
+ 282   3                  uwRev_time_out = 0;
+ 283   3                  ucRxSatus = 0;
+ 284   3              }
+ 285   2          }
+ 286   1      }
+ 287          
+ 288          void connect_ctrl_rst(void)
+ 289          {
+ 290   1          bConnect_one = 0;
+ 291   1          ucConnect_num = 0;
+ 292   1      }
+ 293          
+ 294          static void connect_ctrl(void)
+ 295          {
+ 296   1          static u8 ucTime_cnt = 0xff;
+ 297   1          xdata u8 ucTmp[4];
+ 298   1          xdata u16 uwRom_var;
+ 299   1          xdata u16 uwRom_crc;
+ 300   1          
+ 301   1          if(0 == bConnect_one)
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 6   
 
  302   1          {
- 303   2              uwRev_time_out++;
- 304   2              if(uwRev_time_out >= c_uwRev_time_out)
+ 303   2              ucTime_cnt++;
+ 304   2              if(ucTime_cnt >= DEF_SEND_CONNECT_TIME)
  305   2              {
- 306   3                  uwRev_time_out = 0;
- 307   3                  ucRxSatus = 0;
- 308   3              }
- 309   2          }
- 310   1      }
- 311          
- 312          void connect_ctrl_rst(void)
- 313          {
- 314   1          bConnect_one = 0;
- 315   1          ucConnect_num = 0;
- 316   1      }
- 317          
- 318          static void connect_ctrl(void)
- 319          {
- 320   1          static u8 ucTime_cnt = 0xff;
- 321   1          xdata u8 ucTmp[4];
- 322   1          xdata u16 uwRom_var;
- 323   1          xdata u16 uwRom_crc;
- 324   1          
- 325   1          if(0 == bConnect_one)
- 326   1          {
- 327   2              ucTime_cnt++;
- 328   2              if(ucTime_cnt >= DEF_SEND_CONNECT_TIME)
- 329   2              {
- 330   3                  ucTime_cnt = 0;
- 331   3                  
- 332   3                  iap_info_read(&uwRom_var,&uwRom_crc);
- 333   3                  ucTmp[0] = uwRom_var >> 8;
- 334   3                  ucTmp[1] = uwRom_var & 0xff;
- 335   3                  ucTmp[2] = uwRom_crc >> 8;
- 336   3                  ucTmp[3] = uwRom_crc & 0xff;
- 337   3                  app_bt_send(E_CMD_TX_CONNECT,ucTmp,4,WRITE_FLAG);
- 338   3                  
- 339   3                  //蓝牙开机5S 无反应，则关机
- 340   3                  ucConnect_num++;
- 341   3                  if(ucConnect_num > c_ucConnect_num)
- 342   3                  {
- 343   4                      ucConnect_num = 0;
- 344   4                      pwr_off_set();              //关机
- 345   4                  }
- 346   3              }
- 347   2          }
- 348   1          else
- 349   1          {
- 350   2              ucConnect_num = 0;
- 351   2          }
- 352   1      }
- 353          
- 354          void app_bt_send_key_on(void)
- 355          {
- 356   1          u8 ucTemp;
- 357   1          
- 358   1          ucTemp = 1;
- 359   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
- 360   1      }
- 361          
- 362          void app_bt_send_key_long(void)
- 363          {
-C51 COMPILER V9.00   APP_BT_UART0                                                          11/04/2020 15:29:22 PAGE 7   
+ 306   3                  ucTime_cnt = 0;
+ 307   3                  
+ 308   3                  iap_info_read(&uwRom_var,&uwRom_crc);
+ 309   3                  ucTmp[0] = uwRom_var >> 8;
+ 310   3                  ucTmp[1] = uwRom_var & 0xff;
+ 311   3                  ucTmp[2] = uwRom_crc >> 8;
+ 312   3                  ucTmp[3] = uwRom_crc & 0xff;
+ 313   3                  app_bt_send(E_CMD_TX_CONNECT,ucTmp,4,WRITE_FLAG);
+ 314   3                  
+ 315   3                  //蓝牙开机5S 无反应，则关机
+ 316   3                  ucConnect_num++;
+ 317   3                  if(ucConnect_num > c_ucConnect_num)
+ 318   3                  {
+ 319   4                      ucConnect_num = 0;
+ 320   4                      pwr_off_set();              //关机
+ 321   4                  }
+ 322   3              }
+ 323   2          }
+ 324   1          else
+ 325   1          {
+ 326   2              ucConnect_num = 0;
+ 327   2          }
+ 328   1      }
+ 329          
+ 330          u8 app_debug_mode_get(void)
+ 331          {
+ 332   1          return ucDebug_mode;
+ 333   1      }
+ 334          
+ 335          void app_bt_send_key_on(void)
+ 336          {
+ 337   1          u8 ucTemp;
+ 338   1          
+ 339   1          ucTemp = 1;
+ 340   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
+ 341   1      }
+ 342          
+ 343          void app_bt_send_key_long(void)
+ 344          {
+ 345   1          u8 ucTemp;
+ 346   1          
+ 347   1          ucTemp = 2;
+ 348   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
+ 349   1      }
+ 350          
+ 351          void app_bt_shut_down_time_clr(void)
+ 352          {
+ 353   1          u8 ucTemp;
+ 354   1          
+ 355   1          app_bt_send(E_CMD_TX_SHUT_DOWN_TIME_CLR,&ucTemp,0,WRITE_FLAG);
+ 356   1      }
+ 357          
+ 358          void app_bt_hall_sleep(u8 ucSet)
+ 359          {
+ 360   1          u8 ucTemp;
+ 361   1          ucTemp = ucSet;
+ 362   1          app_bt_send(E_CMD_TX_HALL_SLEEP,&ucTemp,1,WRITE_FLAG);
+ 363   1      }
+C51 COMPILER V9.60.0.0   APP_BT_UART0                                                      03/08/2021 17:08:25 PAGE 7   
 
- 364   1          u8 ucTemp;
- 365   1          
- 366   1          ucTemp = 2;
- 367   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
- 368   1      }
- 369          
- 370          void app_bt_system_operation(void)
- 371          {
- 372   1          u8 ucTemp;
- 373   1          
- 374   1          ucTemp = 3;
- 375   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
- 376   1      }
- 377          
- 378          void app_bt_system_shutdown(void)
- 379          {
- 380   1          u8 ucTemp;
- 381   1          
- 382   1          ucTemp = 4;
- 383   1          app_bt_send(E_CMD_TX_KEY,&ucTemp,1,WRITE_FLAG);
- 384   1      }
- 385          
- 386          void app_bt_shut_down_time_clr(void)
- 387          {
- 388   1          u8 ucTemp;
- 389   1          
- 390   1          app_bt_send(E_CMD_TX_SHUT_DOWN_TIME_CLR,&ucTemp,0,WRITE_FLAG);
- 391   1      }
- 392          
- 393          u8 app_bt_power_led_status(void)
- 394          {
- 395   1          return ucBlue_sleep_mode;
- 396   1      }
- 397          void app_bt_adc_data(u16 uwAdc)
- 398          {
- 399   1          u8 TMP[2];
- 400   1          TMP[0] = uwAdc >> 8;
- 401   1          TMP[1] = uwAdc & 0xff;
- 402   1          app_bt_send(E_CMD_TX_ADC_DATA,TMP,sizeof(TMP),WRITE_FLAG);
- 403   1      }
+ 364          
+ 365          void app_bt_adc_data(u16 uwAdc)
+ 366          {
+ 367   1          u8 TMP[2];
+ 368   1          TMP[0] = uwAdc >> 8;
+ 369   1          TMP[1] = uwAdc & 0xff;
+ 370   1          app_bt_send(E_CMD_TX_ADC_DATA,TMP,sizeof(TMP),WRITE_FLAG);
+ 371   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
@@ -431,7 +399,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----      32
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     23      18
+   DATA SIZE        =     16      17
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      1    ----
 END OF MODULE INFORMATION.

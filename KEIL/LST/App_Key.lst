@@ -1,11 +1,11 @@
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 1   
+C51 COMPILER V9.60.0.0   APP_KEY                                                           03/08/2021 17:08:26 PAGE 1   
 
 
-C51 COMPILER V9.00, COMPILATION OF MODULE APP_KEY
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE APP_KEY
 OBJECT MODULE PLACED IN .\Output\App_Key.obj
-COMPILER INVOKED BY: C:\Keil_MDK\C51\BIN\C51.EXE ..\Main\App_Key.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..
-                    -\Library\Device\Include;..\Main\0AC) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Key.lst) TABS(2) OBJECT(.\Ou
-                    -tput\App_Key.obj)
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\Main\App_Key.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Library;..\Main;..\
+                    -Library\Device\Include;..\Main\0AC;..\Main) DEFINE(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\LST\App_Key.lst) TABS(2) OBJE
+                    -CT(.\Output\App_Key.obj)
 
 line level    source
 
@@ -15,313 +15,185 @@ line level    source
    4          #include "App_BT_Uart0.h"
    5          #include "App_pwr_off.h"
    6          #include "App_Charge_bat.h"
-   7          #include "App_blue_led.h"
-   8          
-   9          //*5ms
-  10          #define c_uwPwr_key_DC_on       20
-  11          #define c_uwPwr_key_long_off    500
-  12          #define c_uwPwr_key_one_on      300
-  13          #define c_uwOpen_led_time       200
-  14          
-  15          #define M_PWR_ON()  {a_oPwr_on=1;}
-  16          #define M_PWR_OFF()  {a_oPwr_on=0;}
-  17          
+   7          #include "APP_EMR_Power.h"
+   8          #include "APP_Low_Power_Mode.h"
+   9          
+  10          //*5ms
+  11          #define c_uwPwr_key_DC_on       20
+  12          #define c_uwPwr_key_long_off    500
+  13          #define c_uwPwr_key_one_on      300
+  14          #define c_uwOpen_led_time       500
+  15          
+  16          #define M_PWR_ON()  {a_oPwr_on=1;}
+  17          #define M_PWR_OFF()  {a_oPwr_on=0;}
   18          
   19          u8 ucPwr_on_status;
   20          bit bPwr_on_frist;
   21          u16 uwPwr_key_long;
-  22          u8 ucLed_Num;
-  23          
-  24          extern u8 exit_sleep_flag;
-  25          
-  26          extern u8 ucLed_mode;
-  27          extern u8 ucLed_mode_full;
-  28          extern u8 ucLed_mode_pwr_low;
-  29          
-  30          extern u8 ucBlue_sleep_mode;
-  31          
-  32          extern u8 bt_connection_status;
-  33          extern u8 current_writing_status;
-  34          extern u8 pen_up_mark_status;
-  35          extern u8 system_operation_status;
-  36          extern u8 force_page_feed_current_state;
-  37          extern u8 emr_writing_state;
+  22          
+  23          //u16 power_on_state2 = 0xff;
+  24          
+  25          #if 0
+              u8 ucPwr_wake_up_sign;
+              
+              void app_set_wake_up_sign(u8 value)
+              {
+                  ucPwr_wake_up_sign = value;
+              }
+              
+              u8 app_get_wake_up_sign(void)
+              {
+                  return ucPwr_wake_up_sign;
+              }
+              #endif
   38          
-  39          u8 second_boot_sign = 0;
-  40          u8 ucPwr_on_current_status = 0;
-  41          
-  42          
-  43          
-  44          void app_key_init(void)
-  45          { 
-  46   1          M_PWR_OFF();
-  47   1          ucPwr_on_status = 0;
-  48   1          bPwr_on_frist = 0;
-  49   1          uwPwr_key_long = 0;
+  39          void app_key_init(void)
+  40          { 
+  41   1          M_PWR_OFF();            //关闭电源
+  42   1          ucPwr_on_status = 0;
+  43   1          bPwr_on_frist = 0;
+  44   1          uwPwr_key_long = 0;
+  45   1      }
+  46          
+  47          u8 pwr_on_status(void)
+  48          {
+  49   1          return ucPwr_on_status;
   50   1      }
   51          
-  52          u8 pwr_on_status(void)
+  52          void pwr_on_set(u8 status)
   53          {
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 2   
+C51 COMPILER V9.60.0.0   APP_KEY                                                           03/08/2021 17:08:26 PAGE 2   
 
-  54   1          return ucPwr_on_status;
+  54   1          ucPwr_on_status = status;
   55   1      }
   56          
-  57          void pwr_on_set(u8 status)
+  57          static void app_key_process(void)
   58          {
-  59   1          ucPwr_on_status = status;
+  59   1          app_bt_send_key_on();
   60   1      }
   61          
-  62          static void app_key_process(void)
+  62          void app_key_server(void)
   63          {
-  64   1          app_bt_send_key_on();
-  65   1      }
-  66          
-  67          void app_key_server(void)
-  68          {
-  69   1          switch(ucPwr_on_status)
-  70   1          {
-  71   2              case 0:
-  72   2              {
-  73   3                  //未开机
-  74   3      
-  75   3                  //接上充电器自动开机
-  76   3                  /*if(1 == DC_input_status())
-  77   3                  {
-  78   3                      ucPwr_on_status = 2;     //开机完成
-  79   3                      M_PWR_ON();
-  80   3                      return;
-  81   3                  }*/
-  82   3                      
-  83   3                  //long key
-  84   3                  if(exit_sleep_flag == 1)
-  85   3                  {
-  86   4                      if(0 == a_iPwr_key)
-  87   4                      {
-  88   5                          exit_sleep_flag = 0;
-  89   5                          ucBlue_sleep_mode = 0;
-  90   5                          second_boot_sign = 1;
-  91   5                          if(ucPwr_on_current_status == 0)
-  92   5                              ucPwr_on_current_status = 1;
-  93   5                      }
-  94   4                  }
-  95   3                  else
-  96   3                  {
-  97   4                      if(1 == a_iPwr_key)
-  98   4                      {
-  99   5                          //
- 100   5                          uwPwr_key_long++;
- 101   5                          if(uwPwr_key_long >= c_uwPwr_key_DC_on)
- 102   5                          {
- 103   6                              uwPwr_key_long = 0;
- 104   6                              /*if(second_boot_sign == 1)
- 105   6                              {
- 106   6                                  second_boot_sign = 0;
- 107   6                                  ucPwr_on_status = 2;     //开机完成
- 108   6                                  M_PWR_ON();
- 109   6                                  a_oReset_BT=1;
- 110   6                                  return;
- 111   6                              }*/
- 112   6                              //
- 113   6                              M_PWR_ON();
- 114   6                              a_oReset_BT=1;
- 115   6                              force_page_feed_current_state = 0;
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 3   
+  64   1          switch(ucPwr_on_status)
+  65   1          {
+  66   2              case 0:
+  67   2              {
+  68   3                  //未开机
+  69   3                  //power_on_state2 = 1;
+  70   3                  //接上充电器自动开机
+  71   3                  if(1 == DC_input_status())
+  72   3                  {
+  73   4                      ucPwr_on_status = 2;     //开机完成
+  74   4                      APP_EMR_Power_ON();
+  75   4                      M_PWR_ON();
+  76   4                      //APP_System_Sleep_State(APP_CMD_SYSTEM_NORMAL_OPERATION_MODE);
+  77   4                      return;
+  78   4                  }
+  79   3                      
+  80   3                  //long key
+  81   3                  if(1 == a_iPwr_key)
+  82   3                  {
+  83   4                      //
+  84   4                      uwPwr_key_long++;
+  85   4                      if(uwPwr_key_long >= c_uwPwr_key_DC_on)
+  86   4                      {
+  87   5                          uwPwr_key_long = 0;
+  88   5      
+  89   5                          //
+  90   5                          M_PWR_ON();
+  91   5                          ucPwr_on_status = 1;     //开机中   
+  92   5                          bPwr_on_frist = 1;
+  93   5                          APP_EMR_Power_ON();
+  94   5                      }
+  95   4                  }
+  96   3                  else
+  97   3                  {
+  98   4                      if(uwPwr_key_long > 0)
+  99   4                          uwPwr_key_long--;
+ 100   4                  }
+ 101   3              }break;
+ 102   2      
+ 103   2              case 1:
+ 104   2              {
+ 105   3                  //开机中 
+ 106   3                  a_oLed_bat_low = 0;
+ 107   3                a_oLed_dc_in = 0;
+ 108   3                a_oLed_emr_b = 0;
+ 109   3                a_oLed_data_w = 0;
+ 110   3                              
+ 111   3                  //延时
+ 112   3                  uwPwr_key_long++;
+ 113   3                  if(uwPwr_key_long >= c_uwOpen_led_time)
+ 114   3                  {
+ 115   4                      uwPwr_key_long = 0;
+C51 COMPILER V9.60.0.0   APP_KEY                                                           03/08/2021 17:08:26 PAGE 3   
 
- 116   6                              /*bt_connection_status = 0;
- 117   6                              current_writing_status = 0;
- 118   6                              pen_up_mark_status = 0;
- 119   6                              system_operation_status = 1;
- 120   6                              force_page_feed_current_state = 0;
- 121   6                              emr_writing_state = 0;*/
- 122   6                              //ucBlue_sleep_mode = 0;
- 123   6                              /*ucLed_mode = E_LED_MODE_OFF;
- 124   6                              ucLed_mode_full = E_LED_MODE_OFF;
- 125   6                              ucLed_mode_pwr_low = E_LED_MODE_OFF;*/
- 126   6                              //force_page_feed_current_state = 0;
- 127   6                              ucPwr_on_status = 1;     //开机中   
- 128   6                              bPwr_on_frist = 1;
- 129   6                              
- 130   6                    ucLed_Num = 0;
- 131   6                              /*if((ucPwr_on_current_status != 1))
- 132   6                                  uwPwr_key_long = c_uwOpen_led_time;*/
- 133   6                              if(0 == a_iDC_Input)
- 134   6                                  uwPwr_key_long = 0;
- 135   6                              else
- 136   6                                  uwPwr_key_long = c_uwOpen_led_time;
- 137   6                              if(0 == a_iDC_Input)
+ 116   4                      ucPwr_on_status = 2;        //开机完成
+ 117   4                      //APP_System_Sleep_State(APP_CMD_SYSTEM_NORMAL_OPERATION_MODE);
+ 118   4                      connect_ctrl_rst();         //重新请求连接，更新文件状态LED
+ 119   4                  }
+ 120   3              
+ 121   3              }break;
+ 122   2      
+ 123   2              case 2:
+ 124   2              {
+ 125   3                  
+ 126   3                  //power_on_state2 = 2;
+ 127   3                  //已经开机
+ 128   3                  if(1 == a_iPwr_key)
+ 129   3                  {
+ 130   4                      if(0 == bPwr_on_frist)
+ 131   4                      {
+ 132   5                          uwPwr_key_long++;
+ 133   5                          if(uwPwr_key_long >= c_uwPwr_key_long_off)
+ 134   5                          {
+ 135   6                              uwPwr_key_long = 0;
+ 136   6      
+ 137   6                              if(0 == DC_input_status())  //不接充电器才能关机
  138   6                              {
- 139   7                                  ucPwr_on_current_status = 0;
- 140   7                                  ucLed_mode = E_LED_MODE_OFF;
- 141   7                                  ucLed_mode_full = E_LED_MODE_OFF;
- 142   7                                  ucLed_mode_pwr_low = E_LED_MODE_OFF;
- 143   7                              }
- 144   6                          }
- 145   5                      }
- 146   4                      else
- 147   4                      {
- 148   5                          if(uwPwr_key_long > 0)
- 149   5                              uwPwr_key_long--;
- 150   5                      }
- 151   4                  }
- 152   3              }break;
- 153   2      
- 154   2              case 1:
- 155   2              {
- 156   3                  /*a_oLed_pwr_low = 0;
- 157   3                  a_oLed_full = 0;
- 158   3                  a_oLed_blue = 0;
- 159   3                          
- 160   3                  //延时
- 161   3                  uwPwr_key_long++;
- 162   3                  if(uwPwr_key_long >= c_uwOpen_led_time)
- 163   3                  {
- 164   3                      uwPwr_key_long = 0;
- 165   3                      ucPwr_on_status = 2;        //开机完成
- 166   3                      connect_ctrl_rst();         //重新请求连接，更新文件状态LED
- 167   3                      blue_led_mode(E_LED_MODE_ON);
- 168   3                  }*/
- 169   3                  //开机中           
- 170   3                  uwPwr_key_long++;
- 171   3                  if(uwPwr_key_long >= c_uwOpen_led_time)
- 172   3                  {
- 173   4                      uwPwr_key_long = 0;
- 174   4                      /*a_oLed_pwr_low = 0;
- 175   4                      a_oLed_full = 0;
- 176   4                      a_oLed_blue = 0;
- 177   4                      ucPwr_on_status = 2;        //开机完成
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 4   
-
- 178   4                      connect_ctrl_rst();
- 179   4                      Delay_MS(1000);*/
- 180   4                      switch(ucLed_Num)
- 181   4                      {
- 182   5      
- 183   5                          case 0:
- 184   5                          {
- 185   6                              a_oLed_pwr_low = 0;
- 186   6                              ucLed_mode_pwr_low = E_LED_MODE_ON;
- 187   6                              ucLed_mode = E_LED_MODE_OFF;
- 188   6                              ucLed_mode_full = E_LED_MODE_OFF;
- 189   6                              a_oLed_full = 1;
- 190   6                              a_oLed_blue = 1;
- 191   6                          }break;
- 192   5      
- 193   5                          case 1:
- 194   5                          {
- 195   6                              a_oLed_pwr_low = 1;
- 196   6                              a_oLed_full = 0;
- 197   6                              ucLed_mode_full = E_LED_MODE_ON;
- 198   6                              ucLed_mode = E_LED_MODE_OFF;
- 199   6                              ucLed_mode_pwr_low = E_LED_MODE_OFF;
- 200   6                              a_oLed_blue = 1;
- 201   6                          }break;
- 202   5      
- 203   5                          case 2:
- 204   5                          {
- 205   6                              a_oLed_pwr_low = 1;
- 206   6                              a_oLed_full = 1;
- 207   6                              a_oLed_blue = 0;
- 208   6                              ucLed_mode = E_LED_MODE_ON;
- 209   6                              ucLed_mode_full = E_LED_MODE_OFF;
- 210   6                              ucLed_mode_pwr_low = E_LED_MODE_OFF;
- 211   6                          }break;
- 212   5      
- 213   5                          case 3:
- 214   5                          /*    
- 215   5                          {
- 216   5                              a_oLed_pwr_low = 1;
- 217   5                              a_oLed_full = 1;
- 218   5                              a_oLed_blue = 1;
- 219   5                              uwPwr_key_long = c_uwOpen_led_time/4;
- 220   5                          }break;
- 221   5                          */
- 222   5                          case 4:
- 223   5                          {
- 224   6                              ucPwr_on_status = 2;        //开机完成
- 225   6                              connect_ctrl_rst();         //重新请求连接，更新文件状态LED
- 226   6                              blue_led_mode(E_LED_MODE_ON);
- 227   6                              app_bt_shut_down_time_clr();
- 228   6                          }break;
- 229   5                      }
- 230   4      
- 231   4                      ucLed_Num++;
- 232   4                  }
- 233   3              
- 234   3              }break;
- 235   2      
- 236   2              case 2:
- 237   2              {
- 238   3                  //已经开机
- 239   3                  if(1 == a_iPwr_key)
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 5   
-
- 240   3                  {
- 241   4                      if(0 == bPwr_on_frist)
- 242   4                      {
- 243   5                          uwPwr_key_long++;
- 244   5                          if(uwPwr_key_long >= c_uwPwr_key_long_off)
- 245   5                          {
- 246   6                              uwPwr_key_long = 0;
- 247   6      
- 248   6                              //if(0 == DC_input_status())  //不接充电器才能关机
- 249   6                              {
- 250   7                                  app_bt_send_key_long(); //通知蓝牙准备关机，等待返回关闭命令
- 251   7                                  //pwr_off_set();          //自身延时强制关机
- 252   7                                  //if(system_operation_status == 1)
- 253   7                                  {
- 254   8                                      system_operation_status = 0;
- 255   8                                      //app_bt_system_shutdown();
- 256   8                                      //a_oReset_BT=0;
- 257   8                                  }
- 258   7                              }
- 259   6                          }
- 260   5                      }
- 261   4                  }
- 262   3                  else
- 263   3                  {
- 264   4                      if(0 == bPwr_on_frist)
- 265   4                      {
- 266   5                          if((uwPwr_key_long >= 3) && (uwPwr_key_long < c_uwPwr_key_one_on)) //15ms ~ c_uwPwr_ke
+ 139   7                                  app_bt_send_key_long(); //通知蓝牙准备关机，等待返回关闭命令
+ 140   7                                  pwr_off_set();          //自身延时强制关机
+ 141   7                              }
+ 142   6                          }
+ 143   5                      }
+ 144   4                  }
+ 145   3                  else
+ 146   3                  {
+ 147   4                      if(0 == bPwr_on_frist)
+ 148   4                      {
+ 149   5                          if((uwPwr_key_long >= 3) && (uwPwr_key_long < c_uwPwr_key_one_on)) //15ms ~ c_uwPwr_ke
              -y_one_on
- 267   5                          {
- 268   6                              //单次按下
- 269   6                              
- 270   6                              uwPwr_key_long = 0;
- 271   6                              app_key_process();
- 272   6                              //a_oReset_BT=1;
- 273   6                              //if(system_operation_status == 0)
- 274   6                              {
- 275   7                                  system_operation_status = 1;
- 276   7                                  //app_bt_system_operation();
- 277   7                              }
- 278   6                              if(force_page_feed_current_state != 1)
- 279   6                              {
- 280   7                                  //blue_led_mode(E_LED_MODE_ON);   //先点亮LED
- 281   7                              }
- 282   6                          }
- 283   5                      }
- 284   4                      else
- 285   4                      {
- 286   5                          bPwr_on_frist = 0;
- 287   5                      }
- 288   4                      
- 289   4                      if(uwPwr_key_long > 0)
- 290   4                          uwPwr_key_long--;
- 291   4                  }
- 292   3              }break;
- 293   2          }
- 294   1      }
+ 150   5                          {
+ 151   6                              //if(APP_Get_System_Sleep_Current_Status() != APP_CMD_SYSTEM_DEEP_SLEEP_MODE)
+ 152   6                              //if(app_get_wake_up_sign() !=  sleep)
+ 153   6                              {
+ 154   7                                  //单次按下
+ 155   7                                  uwPwr_key_long = 0;
+ 156   7                                  app_key_process();
+ 157   7                              }
+ 158   6                          }
+ 159   5                      }
+ 160   4                      else
+ 161   4                      {
+ 162   5                          bPwr_on_frist = 0;
+ 163   5                      }
+ 164   4                      
+ 165   4                      if(uwPwr_key_long > 0)
+ 166   4                          uwPwr_key_long--;
+ 167   4                  }
+ 168   3              }break;
+ 169   2          }
+ 170   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    373    ----
+   CODE SIZE        =    246    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
-C51 COMPILER V9.00   APP_KEY                                                               11/04/2020 15:29:22 PAGE 6   
+C51 COMPILER V9.60.0.0   APP_KEY                                                           03/08/2021 17:08:26 PAGE 4   
 
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      6    ----
+   DATA SIZE        =      3    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      1    ----
 END OF MODULE INFORMATION.

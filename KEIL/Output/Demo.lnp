@@ -6,11 +6,16 @@
 ".\Output\App_BT_Uart0.obj",
 ".\Output\App_Key.obj",
 ".\Output\App_Charge_bat.obj",
+".\Output\App_Hall.obj",
 ".\Output\App_pwr_off.obj",
 ".\Output\App_iap_info.obj",
-".\Output\App_blue_led.obj",
-".\Output\App_Reset_BT.obj",
+".\Output\App_led.obj",
 ".\Output\APP_Adc.obj",
+".\Output\App_Reset_BT.obj",
+".\Output\APP_EMR_Power.obj",
+".\Output\APP_Low_Power_Mode.obj",
+".\Output\APP_External_Interrupt_0.obj",
+".\Output\APP_Pin_Interrupt.obj",
 ".\Output\Delay.obj",
 ".\Output\STARTUP.obj" 
 TO ".\Output\Demo" 
